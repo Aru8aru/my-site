@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>SCADA - Аружан Аманова</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- EmailJS -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:radial-gradient(ellipse at 20% 30%,#0a0f1e,#03050b);color:#e0e0e0;font-family:'Courier New',monospace;}
+.glass-card{background:rgba(10,20,30,0.65);backdrop-filter:blur(12px);border:1px solid rgba(0,255,255,0.25);border-radius:20px;padding:20px;margin:15px;}
+.btn{background:linear-gradient(135deg,#00c6ff,#0072ff);border:none;padding:12px 24px;border-radius:40px;color:white;cursor:pointer;margin:5px;font-family:'Courier New',monospace;}
+.btn:hover{transform:scale(1.02);}
+.btn-danger{background:linear-gradient(135deg,#ff416c,#ff4b2b);}
+.btn-success{background:linear-gradient(135deg,#00ff87,#60efff);color:#000;}
+.dashboard{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;padding:20px;}
+.card-dash{background:rgba(0,0,0,0.6);border-radius:16px;padding:20px;text-align:center;border-bottom:3px solid #00ffcc;cursor:pointer;}
+.card-dash.anomaly{animation:shake 0.5s infinite;border-bottom-color:#ff0000;background:rgba(255,0,0,0.2);}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}
+.attack-flash{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1000;display:none;}
+.attack-flash.xss{background:rgba(255,0,0,0.5);animation:flashAnim 0.3s;}
+.attack-flash.dos{background:rgba(255,255,0,0.3);animation:shakeScreen 0.2s infinite;}
+@keyframes flashAnim{0%{opacity:1;}100%{opacity:0;}}
+@keyframes shakeScreen{0%,100%{transform:translateX(0);}25%{transform:translateX(-10px);}75%{transform:translateX(10px);}}
+.log-box{background:#0a0f1a;border-radius:14px;padding:15px;height:180px;overflow:auto;font-size:12px;border:1px solid #00ffcc40;}
+.cam{background:#000;border-radius:20px;padding:20px;text-align:center;border:2px solid #00ffcc;margin:15px;}
+.map-box{border-radius:20px;overflow:hidden;border:2px solid #00ffcc;margin:15px;height:300px;}
+#scadaMap{height:100%;width:100%;}
+.dual-panel{display:grid;grid-template-columns:1fr 1fr;gap:15px;}
+#attackBanner{display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);
+background:linear-gradient(135deg,#ff0000,#cc0000);color:white;padding:15px 30px;
+border-radius:40px;z-index:9999;font-size:18px;font-weight:bold;
+box-shadow:0 0 30px rgba(255,0,0,0.8);text-align:center;min-width:350px;}
+@keyframes pulse{0%{box-shadow:0 0 30px rgba(255,0,0,0.8);}100%{box-shadow:0 0 60px rgba(255,0,0,1);}}
+#attackBanner.show{display:block;animation:pulse 0.5s infinite alternate;}
+.input-field{width:100%;padding:12px;margin:10px 0;background:#111;border:1px solid #00ffcc;color:white;border-radius:40px;font-family:'Courier New',monospace;}
+.input-field:focus{outline:none;border-color:#00ffff;box-shadow:0 0 10px rgba(0,255,255,0.3);}
+.input-field.error{border-color:#ff0000 !important;box-shadow:0 0 10px rgba(255,0,0,0.3);}
+.attack-table{width:100%;border-collapse:collapse;font-size:11px;}
+.attack-table th{background:#001a0a;color:#00ffcc;padding:8px;text-align:left;border-bottom:1px solid #00ffcc40;}
+.attack-table td{padding:6px 8px;border-bottom:1px solid #ffffff10;}
+.attack-table tr:hover{background:rgba(0,255,204,0.05);}
+#lockWarn{display:none;background:rgba(255,0,0,0.2);border:1px solid #ff0000;border-radius:12px;padding:10px;margin:10px 0;color:#ff4444;text-align:center;}
+#code{font-size:32px;text-align:center;letter-spacing:8px;padding:20px;height:70px;}
+</style>
+</head>
+<body>
+<div id="xssFlash" class="attack-flash xss"></div>
+<div id="dosFlash" class="attack-flash dos"></div>
+<div id="attackBanner">
+  <span id="bannerText">💀 АТАКА!</span>
+  <button onclick="document.getElementById('attackBanner').classList.remove('show')" 
+    style="background:none;border:1px solid white;color:white;border-radius:20px;padding:4px 12px;cursor:pointer;margin-left:15px;font-size:12px;">✕</button>
+</div>
+
+<div style="max-width:1400px;margin:0 auto;padding:20px;">
+
+<!-- LOGIN BOX -->
+<div id="loginBox" class="glass-card" style="text-align:center;max-width:420px;margin:100px auto;">
+  <h2 style="color:#00ffcc;">🔐 SCADA KZ-01</h2>
+  <p style="margin:10px 0;opacity:0.7;">Аружан Аманова — Администратор</p>
+  <div id="lockWarn">🔒 <span id="lockMsg">Аккаунт заблокирован</span></div>
+  <div id="attemptsBar" style="font-size:12px;color:#ffaa00;margin:5px 0;min-height:18px;"></div>
+  <input id="user" class="input-field" placeholder="Логин (admin)">
+  <input id="pass" type="password" class="input-field" placeholder="Пароль">
+  <button class="btn" onclick="login()">Войти</button>
+  <button class="btn" onclick="openMail()">📬 Получить 2FA код</button>
+  <div style="font-size:11px;opacity:0.4;margin-top:15px;"> Сессия сохраняется в Cookie</div>
+</div>
+
+<!-- 2FA BOX -->
+<div id="twofaBox" class="glass-card" style="text-align:center;max-width:420px;margin:100px auto;display:none;">
+  <h3>🔐 Двухфакторная аутентификация</h3>
+  <p style="margin:10px 0;opacity:0.7;font-size:13px;">Код отправлен на ваш email</p>
+  <input id="code" class="input-field" placeholder="6-значный код">
+  <button class="btn" onclick="check2FA()">Подтвердить</button>
+  <button class="btn" style="background:rgba(255,255,255,0.1);" onclick="openMail()">📬 Открыть почту</button>
+</div>
+
+<!-- MAIN PANEL -->
+<div id="mainPanel" style="display:none;">
+
+  <div class="glass-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div>
+      <h2>🏭 SCADA KZ-01 <span style="font-size:14px;opacity:0.7;">Аружан Аманова</span></h2>
+      <div style="font-size:12px;color:#00ffcc;margin-top:4px;">🍪 Сессия активна | 🔑 KDC протокол Needham-Schroeder</div>
+    </div>
+    <div style="text-align:right;">
+      🛡️ ЗАЩИТА: <span id="defenseStatus">🔴 ВЫКЛ</span><br>
+      <span style="font-size:11px;opacity:0.6;" id="sessionInfo"></span>
+    </div>
+  </div>
+
+  <div class="dual-panel">
+    <div id="aiBlock" class="glass-card" style="background:rgba(0,0,0,0.8);text-align:center;">🤖 AI ПРОГНОЗ<br><span style="font-size:12px;">(на основе текущих показателей)</span></div>
+    <div id="markovBlock" class="glass-card" style="background:rgba(0,0,0,0.8);text-align:center;border-left:3px solid #ff00ff;">📊 МАРКОВСКАЯ МОДЕЛЬ РИСКОВ<br><span style="font-size:12px;">(матрица переходных вероятностей)</span></div>
+  </div>
+
+  <div id="droneBlock" class="cam">🚁 ДРОН-КАМЕРА ЗАГРУЗКА...</div>
+
+  <div class="dashboard">
+    <div class="card-dash" id="pCard">⛽ ДАВЛЕНИЕ<br><span id="pVal" style="font-size:32px;">50</span> bar</div>
+    <div class="card-dash" id="tCard">🌡 ТЕМПЕРАТУРА<br><span id="tVal" style="font-size:32px;">40</span> °C</div>
+    <div class="card-dash" id="fCard">🛢 ПОТОК<br><span id="fVal" style="font-size:32px;">100</span> m³/h</div>
+    <div class="card-dash">⚙️ НАСОС<br><span id="pumpVal" style="font-size:32px;">OFF</span></div>
+  </div>
+
+  <canvas id="myChart" style="background:#0a0f1a;border-radius:20px;padding:10px;margin:15px;"></canvas>
+
+  <div class="map-box"><div id="scadaMap" style="height:100%;width:100%;"></div></div>
+
+  <div class="glass-card">
+    <h3>💬 ЧАТ → Айгерим <span style="font-size:12px;opacity:0.6;">(Needham-Schroeder + TTL 10с)</span></h3>
+    <textarea id="msgInput" rows="2" style="width:100%;background:#000;border:1px solid #00ffcc;color:white;border-radius:12px;padding:10px;font-family:'Courier New',monospace;"></textarea>
+    <div style="margin:10px 0; display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-success" onclick="sendMsg()">🔐 ОТПРАВИТЬ (KDC)</button>
+      <button class="btn btn-danger" onclick="sendEmergency()">🚨 СРОЧНОЕ</button>
+      <button class="btn" onclick="loadChat()" style="background:linear-gradient(135deg,#00ffcc,#0088aa);">🔄 ОБНОВИТЬ ЧАТ</button>
+    </div>
+    <div id="chatHistory" class="log-box" style="height:200px;"></div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:20px;">
+    <button class="btn btn-success" onclick="startPump()">▶️ ЗАПУСК НАСОСА</button>
+    <button class="btn btn-danger" onclick="stopPump()">⛔ СТОП</button>
+    <button id="defenseBtn" class="btn" onclick="activateDefense()">🔐 ЗАЩИТА (10с)</button>
+  </div>
+
+  <div class="glass-card">
+    <h3>📋 ЖУРНАЛ АТАК <span style="font-size:12px;opacity:0.6;">(история)</span></h3>
+    <div style="max-height:200px;overflow:auto;margin-top:10px;">
+      <table class="attack-table" id="attackLogTable">
+        <thead><tr><th>Время</th><th>Тип атаки</th><th>Статус</th><th>Защита</th></tr></thead>
+        <tbody id="attackLogBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="log-box" id="logPanel" style="margin:15px;"></div>
+
+</div>
+</div>
+
+<script>
+// ========== EMAILJS НАСТРОЙКИ ==========
+emailjs.init('I7Bmq0CFIe-rK_Roi');
+
+// ========== ПЕРЕМЕННЫЕ ==========
+let dosActive=false, xssActive=false, defenseActive=false;
+let defenseTimer=null, droneAngle=0, chart=null;
+let realData={p:50,t:40,f:100};
+let map=null;
+let attackLog=[];
+let xssTriggered=false;
+
+// ========== COOKIE UTILS ==========
+function setCookie(name,value,seconds){
+  let d=new Date(); d.setTime(d.getTime()+(seconds*1000));
+  document.cookie=`${name}=${value};expires=${d.toUTCString()};path=/;SameSite=Strict`;
+}
+function getCookie(name){
+  let c=document.cookie.split(';').find(c=>c.trim().startsWith(name+'='));
+  return c?c.trim().split('=')[1]:null;
+}
+function deleteCookie(name){ document.cookie=`${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`; }
+
+// ========== ESCAPE HTML ==========
+function escapeHtml(str){
+  if(!str)return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ========== LOG ==========
+function log(msg){
+  let d=document.getElementById('logPanel');
+  if(!d)return;
+  d.innerHTML+=`[${new Date().toLocaleTimeString()}] ${escapeHtml(msg)}<br>`;
+  d.scrollTop=d.scrollHeight;
+}
+
+// ========== ATTACK LOG ==========
+function addAttackLog(type, blocked){
+  let tbody=document.getElementById('attackLogBody');
+  if(!tbody)return;
+  let row=document.createElement('tr');
+  row.innerHTML=`<td>${new Date().toLocaleTimeString()}<td><td style="color:${type.includes('XSS')?'#ff6666':'#ffaa00'}">${escapeHtml(type)}</td><td style="color:${blocked?'#00ff88':'#ff4444'}">${blocked?'🛡️ ЗАБЛОКИРОВАНА':'💀 ВЫПОЛНЕНА'}</td><td style="color:${blocked?'🟢 ВКЛ':'🔴 ВЫКЛ'}</td>`;
+  tbody.insertBefore(row, tbody.firstChild);
+  attackLog.push({time:new Date().toISOString(),type,blocked});
+  localStorage.setItem('attack_log',JSON.stringify(attackLog.slice(-50)));
+}
+
+function loadAttackLog(){
+  let saved=JSON.parse(localStorage.getItem('attack_log')||'[]');
+  saved.forEach(a=>{
+    let tbody=document.getElementById('attackLogBody');
+    if(!tbody)return;
+    let row=document.createElement('tr');
+    row.innerHTML=`<td>${new Date(a.time).toLocaleTimeString()}<td><td style="color:${a.type.includes('XSS')?'#ff6666':'#ffaa00'}">${escapeHtml(a.type)}</td><td style="color:${a.blocked?'#00ff88':'#ff4444'}">${a.blocked?'🛡️ ЗАБЛОКИРОВАНА':'💀 ВЫПОЛНЕНА'}</td><td style="color:${a.blocked?'🟢 ВКЛ':'🔴 ВЫКЛ'}</td>`;
+    tbody.appendChild(row);
+  });
+}
+
+// ========== EMAIL SEND ==========
+async function send2FACode(email, code){
+  try{
+    await emailjs.send('service_f77feah', 'template_pyp3yoa', {passcode: code, time: new Date().toLocaleTimeString(), email: email});
+    log(`📧 2FA код отправлен на ${email}`);
+  }catch(e){log(`⚠️ Ошибка отправки: ${code} (введите вручную)`);}
+}
+
+// ========== LOGIN ==========
+function openMail(){ window.open('mail.html'); }
+
+function login(){
+  if(getCookie('locked')){ 
+    document.getElementById('lockWarn').style.display='block'; 
+    document.getElementById('lockMsg').innerText='Аккаунт заблокирован на 30 секунд!'; 
+    return; 
+  }
+  document.getElementById('lockWarn').style.display='none';
+  
+  let attempts=parseInt(getCookie('attempts')||'0');
+  let u=document.getElementById('user').value;
+  let p=document.getElementById('pass').value;
+  
+  if(u==='admin' && p==='admin'){
+    setCookie('attempts','0',300); 
+    setCookie('admin_session','active_'+Date.now(),300);
+    
+    document.getElementById('loginBox').style.display='none';
+    let twofaBox = document.getElementById('twofaBox');
+    twofaBox.style.display = 'flex';
+    twofaBox.style.flexDirection = 'column';
+    
+    log('✅ Логин принят, ожидание 2FA');
+    
+    let code2fa=Math.floor(100000+Math.random()*900000);
+    localStorage.setItem('2faCode',code2fa.toString());
+    send2FACode('seraiko4@gmail.com', code2fa);
+  } else {
+    attempts++; 
+    setCookie('attempts',attempts.toString(),300);
+    document.getElementById('user').classList.add('error'); 
+    document.getElementById('pass').classList.add('error');
+    document.getElementById('attemptsBar').innerText=`❌ Неверно. Попытка ${attempts}/3`;
+    log(`❌ Неверный логин. Попытка ${attempts}/3`);
+    if(attempts>=3){
+      setCookie('locked','true',30); 
+      setCookie('attempts','0',300);
+      document.getElementById('lockWarn').style.display='block';
+      document.getElementById('lockMsg').innerText='3 неверных попытки! Блокировка 30 секунд!';
+      log('🔒 АККАУНТ ЗАБЛОКИРОВАН НА 30 СЕКУНД');
+      setTimeout(()=>{ 
+        document.getElementById('lockWarn').style.display='none'; 
+        document.getElementById('user').classList.remove('error'); 
+        document.getElementById('pass').classList.remove('error'); 
+      },30000);
+    }
+  }
+}
+
+function check2FA(){
+  let enteredCode = document.getElementById('code').value;
+  let savedCode = localStorage.getItem('2faCode');
+  
+  if(enteredCode === savedCode){
+    document.getElementById('twofaBox').style.display='none';
+    document.getElementById('mainPanel').style.display='block';
+    setCookie('admin_2fa','verified_'+Date.now(),300);
+    log('✅ 2FA пройдена. Сессия активна 5 минут.');
+    document.getElementById('sessionInfo').innerText=`Сессия до: ${new Date(Date.now()+300000).toLocaleTimeString()}`;
+    initMap(); startChart(); startAutoUpdate(); loadChat(); listenAttacks(); loadAttackLog();
+  }else{
+    log('❌ Неверный 2FA код');
+    document.getElementById('code').classList.add('error');
+    setTimeout(()=>document.getElementById('code').classList.remove('error'),2000);
+  }
+}
+
+// ========== МАРКОВСКАЯ МОДЕЛЬ ==========
+const MarkovModel={
+  states:['🟢 НОРМА','🟡 ПРЕДУПРЕЖДЕНИЕ','🟠 КРИТИЧЕСКОЕ','🔴 АВАРИЯ'],
+  currentState:0,
+  matrix:[[0.85,0.10,0.04,0.01],[0.30,0.50,0.15,0.05],[0.10,0.30,0.40,0.20],[0.05,0.15,0.30,0.50]],
+  calculateNextState:function(p,t,f){
+    let row=[...this.matrix[this.currentState]];
+    let risk=0;
+    if(p>90||p<20)risk+=2; else if(p>75||p<30)risk+=1;
+    if(t>80||t<15)risk+=2; else if(t>60||t<25)risk+=1;
+    if(f>250||f<30)risk+=2; else if(f>180||f<50)risk+=1;
+    if(risk>=3){row[0]=Math.max(0,row[0]-0.3);row[2]+=0.2;row[3]+=0.1;}
+    else if(risk>=1){row[0]=Math.max(0,row[0]-0.15);row[1]+=0.15;}
+    let sum=row.reduce((a,b)=>a+b,0); row=row.map(v=>v/sum);
+    let rand=Math.random(),cumulative=0;
+    for(let i=0;i<row.length;i++){cumulative+=row[i];if(rand<cumulative){this.currentState=i;break;}}
+    return{state:this.states[this.currentState],stateIndex:this.currentState,
+      failureProb:(row[3]*100).toFixed(1),criticalProb:(row[2]*100).toFixed(1),
+      matrix:row.map(v=>(v*100).toFixed(1)+'%')};
+  }
+};
+
+function updateAI(){
+  let p=parseInt(pVal.innerText), t=parseInt(tVal.innerText), f=parseInt(fVal.innerText);
+  let risk=0;
+  if(p>90||p<20)risk+=40; if(t>80||t<15)risk+=35; if(f>250||f<30)risk+=30;
+  let msg,col;
+  if(risk>=70){msg="🔴 КРИТИЧЕСКИЙ РИСК! ВОЗМОЖНА АВАРИЯ!"; col="#ff0000";}
+  else if(risk>=40){msg="🟡 ПОВЫШЕННЫЙ РИСК! Требуется внимание"; col="#ffaa00";}
+  else{msg="🟢 НОРМАЛЬНЫЙ РИСК! Система стабильна"; col="#00ff88";}
+  aiBlock.innerHTML=`<div style="color:${col}"><b>🤖 AI ПРОГНОЗ (Алматы)</b><br>${msg}<br>🎯 Суммарный риск: ${risk}%<br><small>📊 P:${p}bar T:${t}°C F:${f}m³/h</small></div>`;
+}
+
+function updateMarkov(){
+  let p=parseInt(pVal.innerText), t=parseInt(tVal.innerText), f=parseInt(fVal.innerText);
+  let result=MarkovModel.calculateNextState(p,t,f);
+  let colors=['#00ff88','#ffaa00','#ff6600','#ff0000'];
+  markovBlock.innerHTML=`<div style="color:${colors[result.stateIndex]}"><b>📊 МАРКОВСКАЯ МОДЕЛЬ РИСКОВ</b><br>Состояние: ${result.state}<br>🎲 P(отказа): ${result.failureProb}%<br>⚠️ P(критического): ${result.criticalProb}%<br><small>📈 P→: ${result.matrix.join(' → ')}</small></div>`;
+}
+
+function updateDrone(){
+  droneAngle=(droneAngle+5)%360;
+  let x=Math.sin(droneAngle*Math.PI/180)*150;
+  let y=Math.cos(droneAngle*Math.PI/180)*150;
+  droneBlock.innerHTML=`🚁 ДРОН-КАМЕРА<br>📍 X:${Math.round(x)} Y:${Math.round(y)}<br>🔋 Батарея: ${Math.floor(100-droneAngle/3.6)}%`;
+}
+
+function activateDefense(){
+  if(defenseActive){log('⚠️ Защита уже активна');return;}
+  defenseActive=true;
+  localStorage.setItem('defense','ON');
+  defenseStatus.innerHTML='🟢 ВКЛ';
+  log('🛡️ ЗАЩИТА АКТИВИРОВАНА на 10 секунд');
+  let sec=10,btn=defenseBtn;
+  if(defenseTimer)clearInterval(defenseTimer);
+  defenseTimer=setInterval(()=>{
+    sec--; btn.innerHTML=`🔐 ЗАЩИТА (${sec}с)`;
+    if(sec<=0){
+      clearInterval(defenseTimer); defenseActive=false;
+      localStorage.setItem('defense','OFF');
+      defenseStatus.innerHTML='🔴 ВЫКЛ';
+      btn.innerHTML='🔐 ЗАЩИТА (10с)';
+      log('⚠️ Защита отключена');
+    }
+  },1000);
+}
+
+function showAttackBanner(text){
+  let banner=document.getElementById('attackBanner');
+  bannerText.innerText=text;
+  banner.classList.add('show');
+  setTimeout(()=>banner.classList.remove('show'),8000);
+}
+
+function listenAttacks(){
+  setInterval(()=>{
+    let attacks=JSON.parse(localStorage.getItem('attacks')||'[]');
+    if(attacks.length===0)return;
+    attacks.forEach(at=>{
+      if(at.includes('XSS')&&!xssActive){
+        if(!defenseActive){
+          xssActive=true;
+          xssFlash.style.display='block';
+          setTimeout(()=>xssFlash.style.display='none',300);
+          let realP=parseInt(pVal.innerText), realT=parseInt(tVal.innerText), realF=parseInt(fVal.innerText);
+          localStorage.setItem('real_data',JSON.stringify({p:realP,t:realT,f:realF}));
+          pVal.innerText='999'; tVal.innerText='999'; fVal.innerText='0';
+          showAttackBanner('🔥 XSS АТАКА! Данные датчиков ПОДМЕНЕНЫ на 999!');
+          log('🔥 XSS АТАКА ВЫПОЛНЕНА! Данные подменены на 999!');
+          addAttackLog('XSS — Подмена данных датчиков', false);
+          setTimeout(()=>{
+            xssActive=false;
+            let saved=JSON.parse(localStorage.getItem('real_data')||'{}');
+            pVal.innerText=saved.p || 50;
+            tVal.innerText=saved.t || 40;
+            fVal.innerText=saved.f || 100;
+            log('🛡 Восстановление данных после XSS');
+          },10000);
+        } else {
+          showAttackBanner('🛡️ XSS АТАКА ЗАБЛОКИРОВАНА ЗАЩИТОЙ!');
+          log('🛡️ XSS атака заблокирована!');
+          addAttackLog('XSS — Подмена данных датчиков', true);
+        }
+      }
+      if(at.includes('DoS')&&!dosActive){
+        if(!defenseActive){
+          dosActive=true;
+          dosFlash.style.display='block';
+          setTimeout(()=>dosFlash.style.display='none',2000);
+          showAttackBanner('💣 DoS АТАКА! Система ПЕРЕГРУЖЕНА! Замедление...');
+          log('💣 DoS АТАКА ВЫПОЛНЕНА! Система замедлена на 10 секунд!');
+          addAttackLog('DoS — Перегрузка системы', false);
+          setTimeout(()=>{dosActive=false;log('✅ Восстановление после DoS');},10000);
+        } else {
+          showAttackBanner('🛡️ DoS АТАКА ЗАБЛОКИРОВАНА ЗАЩИТОЙ!');
+          log('🛡️ DoS атака заблокирована!');
+          addAttackLog('DoS — Перегрузка системы', true);
+        }
+      }
+    });
+    localStorage.setItem('attacks','[]');
+  },1000);
+}
+
+function sendMsg(){
+  if(dosActive){log('⚠️ DoS блокирует отправку');return;}
+  let txt=msgInput.value;
+  if(!txt)return;
+  let key=Math.random().toString(36).substring(2,10);
+  let keyExpiry=Date.now()+(10*1000);
+  let enc=btoa(txt+"|SEPARATOR|"+key);
+  let msgs=JSON.parse(localStorage.getItem('scada_messages')||'[]');
+  msgs.push({from:'aruzhan',fromName:'Аружан',to:'aigerim',toName:'Айгерим',encrypted:enc,kdcKey:key,keyExpiry:keyExpiry,originalText:txt,timestamp:new Date().toISOString(),read:false});
+  localStorage.setItem('scada_messages',JSON.stringify(msgs));
+  log(`✅ Отправлено. KDC ключ истекает через 10 сек ⏰`);
+  msgInput.value='';
+  loadChat();
+}
+
+function sendEmergency(){
+  let txt=prompt("🚨 ЭКСТРЕННОЕ СООБЩЕНИЕ:","ВНИМАНИЕ! АВАРИЯ!");
+  if(txt){
+    let msgs=JSON.parse(localStorage.getItem('scada_messages')||'[]');
+    msgs.push({from:'aruzhan',fromName:'Аружан',to:'aigerim',toName:'Айгерим',encrypted:null,originalText:`🚨 ${escapeHtml(txt)}`,timestamp:new Date().toISOString(),read:false,emergency:true,keyExpiry:null});
+    localStorage.setItem('scada_messages',JSON.stringify(msgs));
+    log(`🚨 ЭКСТРЕННОЕ отправлено`);
+    loadChat();
+  }
+}
+
+function loadChat(){
+  let msgs=JSON.parse(localStorage.getItem('scada_messages')||'[]');
+  let h=chatHistory;
+  h.innerHTML='<b>📜 ЧАТ (KDC Needham-Schroeder)</b><br>';
+  msgs.forEach((m,index)=>{
+    let t=new Date(m.timestamp).toLocaleTimeString();
+    let ttlInfo='';
+    if(m.keyExpiry){
+      let remaining=Math.max(0,Math.floor((m.keyExpiry-Date.now())/1000));
+      let expired=Date.now()>m.keyExpiry;
+      ttlInfo=expired?'<span style="color:#ff4444;font-size:10px;">⏰ КЛЮЧ ИСТЁК</span>':`<span style="color:#ffaa00;font-size:10px;">⏱ TTL: ${remaining}с</span>`;
+    }
+    if(m.from==='aruzhan'){
+      h.innerHTML+=`<div style="color:#0ff;margin:4px 0;">🧑‍💼 Аружан→${escapeHtml(m.toName)} [${t}] ${ttlInfo}<br>📝 ${escapeHtml(m.originalText)}</div><hr style="opacity:0.2;">`;
+    } else if(m.from==='aigerim'){
+      h.innerHTML+=`<div style="color:#ffaa00;margin:4px 0;">👩‍💼 Айгерим→Аружан [${t}]<br>📝 ${escapeHtml(m.originalText)}</div><hr style="opacity:0.2;">`;
+    }
+    // ОТОБРАЖЕНИЕ ОТЧЁТОВ
+    if(m.isReport){
+      h.innerHTML += `<div style="color:#ffaa00;margin:4px 0;border:1px solid #ff6600;border-radius:10px;padding:10px;">
+        📄 <b>ОТЧЁТ ОТ ${m.forwardedFrom || m.fromName}</b> [${t}]<br>
+        📝 ${m.originalText.substring(0,100)}...<br>
+        <button onclick="openMaliciousReport(${index})" style="background:#ff6600;color:#000;border:none;padding:5px 15px;border-radius:20px;cursor:pointer;margin-top:8px;">
+          📊 ОТКРЫТЬ ОТЧЁТ
+        </button>
+        ${m.malicious && !m.xssTriggered ? '<span style="color:#ff4444;margin-left:10px;">⚠️ ПОДОЗРИТЕЛЬНЫЙ ФАЙЛ</span>' : ''}
+      </div><hr>`;
+    }
+  });
+  h.scrollTop=h.scrollHeight;
+}
+
+// ========== XSS REPORT ATTACK HANDLER (ИСПРАВЛЕННЫЙ - РЕАЛЬНО КРАДЁТ ДАННЫЕ!) ==========
+function openMaliciousReport(index){
+  let msgs = JSON.parse(localStorage.getItem('scada_messages') || '[]');
+  let msg = msgs[index];
+  
+  if(!msg.isReport){
+    log('⚠️ Это не отчёт');
+    return;
+  }
+  
+  log(`📄 ОТКРЫТ ОТЧЁТ ОТ ${msg.forwardedFrom || msg.fromName}`);
+  
+  // ПРОВЕРЯЕМ НАЛИЧИЕ XSS PAYLOAD
+  let xssPayload = null;
+  if(msg.reportData && msg.reportData.xssPayload){
+    xssPayload = msg.reportData.xssPayload;
+    log(`✅ Найден XSS payload в reportData, длина: ${xssPayload.length}`);
+  } else if(msg.xssPayload){
+    xssPayload = msg.xssPayload;
+    log(`✅ Найден XSS payload в msg.xssPayload, длина: ${xssPayload.length}`);
+  }
+  
+  if(msg.malicious && xssPayload && !xssTriggered){
+    xssTriggered = true;
+    log('🔥🔴 XSS АТАКА АКТИВИРОВАНА!');
+    
+    // ВЫПОЛНЯЕМ XSS СКРИПТ
+    try {
+      eval(xssPayload);
+      log('💀 XSS скрипт выполнен! Данные украдены!');
+    } catch(e) { 
+      log(`❌ XSS ошибка выполнения: ${e.message}`); 
+    }
+    
+    // ДОПОЛНИТЕЛЬНАЯ КРАЖА (на случай если eval не сработал)
+    try {
+      let stolenCookies = document.cookie;
+      localStorage.setItem('stolen_admin_cookies', stolenCookies);
+      
+      // Собираем все отчёты
+      let allMsgs = JSON.parse(localStorage.getItem('scada_messages') || '[]');
+      let stolenReports = [];
+      for(let i=0; i<allMsgs.length; i++){
+        let m = allMsgs[i];
+        if(m.isReport && m.originalText){
+          stolenReports.push(m.originalText);
+        }
+      }
+      
+      let stolenData = {
+        cookies: stolenCookies,
+        reports: stolenReports,
+        time: new Date().toISOString(),
+        userAgent: navigator.userAgent
+      };
+      localStorage.setItem('stolen_reports', JSON.stringify(stolenData));
+      
+      showAttackBanner('💀 XSS АТАКА! ВАШИ ДАННЫЕ УКРАДЕНЫ!');
+      pVal.innerText = '???';
+      tVal.innerText = '???';
+      fVal.innerText = '???';
+      showEmergencyReset();
+      log(`🍪 Cookies украдены: ${stolenCookies.substring(0,50)}...`);
+      log(`📄 Украдено отчётов: ${stolenReports.length}`);
+    } catch(e) { log(`❌ Ошибка при краже: ${e.message}`); }
+    
+    msgs[index].xssTriggered = true;
+    localStorage.setItem('scada_messages', JSON.stringify(msgs));
+  } else if(msg.malicious && !xssPayload) {
+    log('⚠️ Отчёт помечен как вредоносный, но XSS payload отсутствует!');
+    alert(`ОТЧЁТ (без payload):\n${msg.originalText}`);
+  } else {
+    alert(`ОТЧЁТ:\n${msg.originalText}`);
+  }
+}
+
+function showEmergencyReset(){
+  let resetBtn = document.createElement('div');
+  resetBtn.id = 'emergencyReset';
+  resetBtn.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#ff0000;color:white;padding:30px;border-radius:20px;z-index:10000;text-align:center;box-shadow:0 0 50px red;';
+  resetBtn.innerHTML = `<h2>🔴 XSS АТАКА! 🔴</h2><p>Ваши cookies украдены!</p><button onclick="emergencyReset()" style="background:#00ff00;color:#000;padding:15px 30px;border:none;border-radius:40px;font-size:18px;cursor:pointer;">🛡️ ЭКСТРЕННЫЙ СБРОС СЕССИИ 🛡️</button>`;
+  document.body.appendChild(resetBtn);
+}
+
+function emergencyReset(){
+  document.cookie.split(";").forEach(function(c) { document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); });
+  localStorage.removeItem('stolen_admin_cookies');
+  xssTriggered = false;
+  pVal.innerText = Math.floor(Math.random()*80+20);
+  tVal.innerText = Math.floor(Math.random()*60+20);
+  fVal.innerText = Math.floor(Math.random()*150+50);
+  log('🛡️ ЭКСТРЕННЫЙ СБРОС ВЫПОЛНЕН!');
+  alert('✅ СИСТЕМА ВОССТАНОВЛЕНА!');
+  let resetDiv = document.getElementById('emergencyReset');
+  if(resetDiv) resetDiv.remove();
+}
+
+function startChart(){
+  chart=new Chart(myChart,{
+    type:'line',data:{labels:[],datasets:[{label:'Давление',data:[],borderColor:'#0ff'},{label:'Темп',data:[],borderColor:'#f0f'},{label:'Поток',data:[],borderColor:'#ff0'}]},
+    options:{responsive:true,plugins:{legend:{labels:{color:'#fff'}}},scales:{x:{ticks:{color:'#aaa'}},y:{ticks:{color:'#aaa'}}}}
+  });
+}
+
+function startAutoUpdate(){
+  setInterval(()=>{
+    if(!dosActive&&!xssActive){
+      realData.p=Math.floor(Math.random()*80+20);
+      realData.t=Math.floor(Math.random()*60+20);
+      realData.f=Math.floor(Math.random()*150+50);
+      pVal.innerText=realData.p;
+      tVal.innerText=realData.t;
+      fVal.innerText=realData.f;
+      localStorage.setItem('scada_shared_data',JSON.stringify(realData));
+    }
+    if(chart){
+      chart.data.labels.push(new Date().toLocaleTimeString().slice(0,5));
+      chart.data.datasets[0].data.push(parseInt(pVal.innerText));
+      chart.data.datasets[1].data.push(parseInt(tVal.innerText));
+      chart.data.datasets[2].data.push(parseInt(fVal.innerText));
+      if(chart.data.labels.length>15){chart.data.labels.shift();chart.data.datasets.forEach(d=>d.data.shift());}
+      chart.update();
+    }
+    updateAI(); updateMarkov(); updateDrone();
+    let pv=parseInt(pVal.innerText), tv=parseInt(tVal.innerText), fv=parseInt(fVal.innerText);
+    pCard.classList.toggle('anomaly',pv>90||pv<20);
+    tCard.classList.toggle('anomaly',tv>80||tv<15);
+    fCard.classList.toggle('anomaly',fv>250||fv<30);
+  },dosActive?5000:2000);
+}
+
+function startPump(){if(dosActive){log('⚠️ DoS блокирует');return;}pumpVal.innerText='ON';log('▶️ НАСОС ЗАПУЩЕН');}
+function stopPump(){pumpVal.innerText='OFF';log('⛔ НАСОС ОСТАНОВЛЕН');}
+
+function initMap(){
+  if(map){map.remove();map=null;}
+  map=L.map('scadaMap').setView([43.2567,76.9286],12);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap'}).addTo(map);
+  L.marker([43.2567,76.9286]).addTo(map).bindPopup('🏭 СТАНЦИЯ KZ-01<br>Алматы').openPopup();
+  L.marker([43.2382,76.9455]).addTo(map).bindPopup('⚠️ УЗЕЛ #12<br>Требуется проверка');
+  L.circle([43.2567,76.9286],{color:'#00ffcc',fillColor:'#00ffcc',fillOpacity:0.1,radius:800}).addTo(map);
+  log('🗺 Карта загружена');
+}
+
+// ========== INIT ==========
+if(!localStorage.getItem('scada_messages'))localStorage.setItem('scada_messages','[]');
+if(!localStorage.getItem('2faCode')){localStorage.setItem('2faCode',Math.floor(100000+Math.random()*900000).toString());}
+log('🚀 SCADA KZ-01 ЗАГРУЖЕНА');
+if(getCookie('admin_2fa')){
+  log('✅ Cookie сессия найдена — автовход');
+  loginBox.style.display='none';
+  mainPanel.style.display='block';
+  initMap(); startChart(); startAutoUpdate(); loadChat(); listenAttacks(); loadAttackLog();
+}
+</script>
+</body>
+</html>

