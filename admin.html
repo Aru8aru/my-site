@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QazMunaiGaz Pro — Әкімші панелі</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0a1628;--navy2:#0f2040;--navy3:#162444;
+  --blue:#1565C0;--blue2:#1976D2;--blue3:#42a5f5;
+  --gold:#C8960C;--gold2:#F5B800;--gold3:rgba(200,150,12,.12);
+  --green:#43a047;--green2:rgba(67,160,71,.12);
+  --red:#e53935;--red2:rgba(229,57,53,.12);
+  --amber:#f57f17;--amber2:rgba(245,127,23,.12);
+  --text:#e8edf5;--t2:#8da4c4;--t3:#4a6080;--t4:#2a3a55;
+  --bg:#07111f;--bg2:#0a1828;--bg3:#0d1f38;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.04);
+  --shadow:0 4px 24px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Golos Text',sans-serif;overflow:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:0;
+  background-image:linear-gradient(rgba(200,150,12,.015) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(200,150,12,.015) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none}
+
+/* ===== LOGIN ===== */
+#login{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--navy),var(--navy2),#1a0a0a)}
+#login::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 30% 40%,rgba(229,57,53,.07),transparent 55%),
+             radial-gradient(ellipse at 70% 70%,rgba(200,150,12,.07),transparent 55%)}
+.lbox{position:relative;z-index:1;background:var(--bg2);border:1px solid rgba(229,57,53,.25);
+  border-radius:16px;width:440px;box-shadow:0 32px 80px rgba(0,0,0,.6);overflow:hidden}
+.lh{background:linear-gradient(135deg,#1a0808,#2d1212);padding:32px 36px;
+  text-align:center;border-bottom:1px solid rgba(229,57,53,.2)}
+.l-icon{font-size:44px;margin-bottom:12px}
+.l-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:5px}
+.l-sub{font-size:12px;color:var(--t2)}
+.l-ns{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:5px 14px;
+  background:rgba(229,57,53,.1);border:1px solid rgba(229,57,53,.3);border-radius:20px;font-size:11px;color:var(--red)}
+.rdot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.lb-body{padding:32px 36px}
+.fl{margin-bottom:16px}
+.fl label{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:6px;display:block}
+.fi{width:100%;padding:11px 14px;background:rgba(255,255,255,.05);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-size:13px;font-family:'Golos Text',sans-serif;outline:none;transition:border-color .2s}
+.fi:focus{border-color:rgba(229,57,53,.5)}
+.fi::placeholder{color:var(--t3)}
+.lb-btn{width:100%;padding:13px;background:var(--red);color:#fff;border:none;border-radius:8px;
+  font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'Golos Text',sans-serif;margin-top:4px}
+.lb-btn:hover{background:#f44336;transform:translateY(-1px);box-shadow:0 6px 20px rgba(229,57,53,.3)}
+.lb-err{display:none;margin-top:10px;padding:9px 14px;background:var(--red2);border:1px solid rgba(229,57,53,.3);
+  border-radius:6px;font-size:12px;color:var(--red);text-align:center}
+.lb-err.show{display:block}
+.lb-hint{margin-top:14px;padding:10px 14px;background:rgba(229,57,53,.06);border:1px solid rgba(229,57,53,.15);
+  border-radius:6px;font-size:11px;color:rgba(229,57,53,.7);line-height:1.7}
+.lb-hint strong{color:var(--red)}
+.lb-back{display:block;text-align:center;margin-top:14px;font-size:12px;color:var(--t3);text-decoration:none;transition:color .15s}
+.lb-back:hover{color:var(--gold2)}
+
+/* NS ANIMATION */
+#ns-anim{position:fixed;inset:0;z-index:9998;background:rgba(7,17,31,.96);
+  display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+#ns-anim.show{display:flex}
+.nsa-title{font-family:'Playfair Display',serif;font-size:19px;color:#fff;text-align:center}
+.nsa-sub{font-size:12px;color:var(--t2);text-align:center;margin-bottom:6px}
+.nsa-wrap{display:flex;flex-direction:column;gap:7px;width:460px}
+.nsa{padding:10px 16px;border-radius:7px;border:1px solid var(--border);background:var(--bg2);
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);
+  opacity:0;transform:translateX(-8px);transition:all .4s;display:flex;align-items:center;gap:10px}
+.nsa.active{opacity:1;transform:none;border-color:rgba(229,57,53,.4);color:var(--red);background:rgba(229,57,53,.05)}
+.nsa.done{opacity:1;transform:none;border-color:rgba(67,160,71,.3);color:var(--green);background:rgba(67,160,71,.06)}
+.nsa-prog-wrap{width:460px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+.nsa-prog{height:100%;background:var(--red);width:0;transition:width .5s ease}
+
+/* ===== APP ===== */
+#app{position:relative;z-index:1;display:none;flex-direction:column;height:100vh}
+#app.show{display:flex}
+
+/* TOPBAR */
+.topbar{height:54px;min-height:54px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 22px;background:var(--navy2);border-bottom:2px solid var(--red);flex-shrink:0}
+.tb-l{display:flex;align-items:center;gap:14px}
+.burger{background:none;border:none;cursor:pointer;padding:5px;display:flex;flex-direction:column;gap:5px}
+.burger span{display:block;width:22px;height:2px;background:var(--t2);transition:all .3s;border-radius:1px}
+.burger.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.burger.open span:nth-child(2){opacity:0}
+.burger.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+.tb-logo{display:flex;align-items:center;gap:9px;text-decoration:none}
+.tb-logo-ic{width:32px;height:32px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.tb-logo-n{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#fff}
+.tb-logo-s{font-size:9px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase}
+.ad-pill{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;
+  background:var(--red2);border:1px solid rgba(229,57,53,.4);color:var(--red)}
+.tb-r{display:flex;align-items:center;gap:14px}
+.tb-ns{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:6px;font-size:11px;font-weight:600;
+  background:var(--green2);border:1px solid rgba(67,160,71,.3);color:var(--green)}
+.tb-clock{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--t2)}
+.tb-user{display:flex;align-items:center;gap:8px;padding:5px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px}
+.tb-av{width:28px;height:28px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
+.tb-uname{font-size:12px;font-weight:600;color:var(--text)}
+.tb-uip{font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace}
+.tb-logout{padding:6px 14px;background:transparent;border:1px solid var(--border);border-radius:6px;
+  color:var(--t2);font-size:12px;cursor:pointer;font-family:'Golos Text',sans-serif;transition:all .15s}
+.tb-logout:hover{border-color:var(--red);color:var(--red)}
+
+/* BODY */
+.body{flex:1;display:flex;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:230px;min-width:230px;background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;transition:width .3s,min-width .3s;flex-shrink:0}
+.sidebar.collapsed{width:0;min-width:0}
+.sb-sec{padding:14px 14px 4px;font-size:10px;font-weight:700;color:var(--t4);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+.sbi{display:flex;align-items:center;gap:9px;padding:9px 14px;margin:1px 8px;border-radius:7px;
+  cursor:pointer;font-size:13px;color:var(--t2);transition:all .15s;white-space:nowrap;
+  border:none;background:none;width:calc(100% - 16px);text-align:left;font-family:'Golos Text',sans-serif;font-weight:500}
+.sbi:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.sbi.active{background:rgba(229,57,53,.1);color:var(--red);border:1px solid rgba(229,57,53,.2)}
+.sbi-ic{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.sb-div{height:1px;background:var(--border);margin:8px 14px}
+.sb-stat{margin:0 12px 14px;padding:11px 12px;background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:8px;font-size:10px}
+.sb-stat-t{color:var(--t3);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px}
+.sb-stat-r{display:flex;justify-content:space-between;margin-bottom:4px;color:var(--t2)}
+.sb-stat-r:last-child{margin-bottom:0}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;background:var(--bg)}
+.content::-webkit-scrollbar{width:4px}
+.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.pg{display:none;padding:26px;animation:fi .25s ease}
+.pg.active{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.pg-tag{display:inline-block;padding:3px 10px;background:rgba(229,57,53,.1);border:1px solid rgba(229,57,53,.25);
+  color:var(--red);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-radius:3px;margin-bottom:10px}
+.pg-h1{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:#fff;margin-bottom:5px}
+.pg-sub{font-size:13px;color:var(--t2);margin-bottom:24px}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.mb{margin-bottom:16px}
+
+/* CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px}
+.card-t{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+
+/* STAT */
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;transition:border-color .2s}
+.stat:hover{border-color:rgba(229,57,53,.2)}
+.stat-ic{font-size:24px;margin-bottom:9px}
+.stat-lb{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;font-weight:600}
+.stat-val{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:#fff;line-height:1}
+.stat-unit{font-size:12px;color:var(--t2);margin-top:3px}
+.stat-tr{font-size:11px;margin-top:7px}
+.tup{color:var(--green)}.tdn{color:var(--red)}.tok{color:var(--blue3)}
+
+/* BADGE */
+.bdg{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em}
+.bok{background:var(--green2);color:var(--green)}.bwarn{background:var(--amber2);color:var(--amber)}
+.berr{background:var(--red2);color:var(--red)}.binfo{background:rgba(21,101,192,.12);color:var(--blue3)}
+.bgold{background:var(--gold3);color:var(--gold2)}.bred{background:var(--red2);color:var(--red)}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;padding:8px 12px;color:var(--t3);font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--border2);color:var(--t2)}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+.tbl td:first-child{color:var(--text);font-weight:500}
+
+/* LOG */
+.log-list{display:flex;flex-direction:column;gap:4px;max-height:320px;overflow-y:auto}
+.log-list::-webkit-scrollbar{width:3px}
+.log-list::-webkit-scrollbar-thumb{background:var(--t4)}
+.log-item{display:flex;gap:9px;padding:8px 11px;border-radius:6px;background:var(--bg3);border:1px solid var(--border2);font-size:11px;align-items:flex-start}
+.log-time{font-family:'JetBrains Mono',monospace;color:var(--t3);flex-shrink:0;font-size:10px;padding-top:1px}
+.log-msg{color:var(--t2);flex:1;line-height:1.5}
+
+/* DB TOOLBAR */
+.db-bar{display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+.db-search{flex:1;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:9px 13px;min-width:200px}
+.db-search input{background:none;border:none;outline:none;color:var(--text);font-size:13px;font-family:'Golos Text',sans-serif;width:100%}
+.db-search input::placeholder{color:var(--t3)}
+.db-btn{padding:9px 16px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Golos Text',sans-serif;border:1px solid;transition:all .15s}
+.db-gold{background:var(--gold3);color:var(--gold2);border-color:rgba(200,150,12,.3)}.db-gold:hover{background:rgba(200,150,12,.2)}
+.db-out{background:transparent;color:var(--t2);border-color:var(--border)}.db-out:hover{border-color:var(--t2);color:var(--text)}
+
+/* NS VIS */
+.ns-vis{display:flex;flex-direction:column;gap:7px}
+.ns-row{display:flex;align-items:center;gap:9px;padding:9px 13px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t2);transition:all .3s}
+.ns-row.active{border-color:rgba(229,57,53,.35);background:rgba(229,57,53,.05);color:var(--red)}
+.ns-row.done{border-color:rgba(67,160,71,.25);background:rgba(67,160,71,.05);color:var(--green)}
+.ns-row.fail{border-color:rgba(229,57,53,.4);background:rgba(229,57,53,.08);color:var(--red)}
+.ns-row-n{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.ns-btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.ns-btn{padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Golos Text',sans-serif;border:1px solid;transition:all .15s}
+.ns-ok{background:var(--green2);color:var(--green);border-color:rgba(67,160,71,.3)}.ns-ok:hover{background:rgba(67,160,71,.2)}
+.ns-atk{background:var(--red2);color:var(--red);border-color:rgba(229,57,53,.3)}.ns-atk:hover{background:rgba(229,57,53,.2)}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;z-index:8000;padding:12px 18px;border-radius:9px;
+  font-size:13px;background:var(--bg2);border:1px solid var(--border);box-shadow:var(--shadow);
+  transform:translateY(18px);opacity:0;transition:all .3s;max-width:320px}
+.toast.show{transform:none;opacity:1}
+.t-ok{border-color:rgba(67,160,71,.4);background:var(--green2)}
+.t-err{border-color:rgba(229,57,53,.4);background:var(--red2)}
+.t-warn{border-color:rgba(245,127,23,.4);background:var(--amber2)}
+
+@media(max-width:900px){
+  .sidebar{position:fixed;top:54px;bottom:0;z-index:800}
+  .g2,.g3,.g4{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="lbox">
+    <div class="lh">
+      <div class="l-icon">👑</div>
+      <div class="l-title">Әкімші панелі</div>
+      <div class="l-sub">QazMunaiGaz Pro — Толық басқару жүйесі</div>
+      <div class="l-ns"><span class="rdot"></span>Жоғарғы деңгей рұқсат · NS Auth</div>
+    </div>
+    <div class="lb-body">
+      <div class="fl"><label>Логин</label><input class="fi" id="l-user" placeholder="admin" value="admin"></div>
+      <div class="fl"><label>Құпия сөз</label><input class="fi" id="l-pass" type="password" placeholder="••••••••" value="qmg2025"></div>
+      <button class="lb-btn" onclick="doLogin()">👑 Әкімші ретінде кіру</button>
+      <div class="lb-err" id="l-err">Логин немесе құпия сөз қате</div>
+      <div class="lb-hint">💡 Демо: <strong>admin / qmg2025</strong><br>Толық деректерге, NS қауіпсіздікке рұқсат</div>
+      <a class="lb-back" href="index.html">← Корпоративтік сайтқа оралу</a>
+    </div>
+  </div>
+</div>
+
+<!-- NS ANIMATION -->
+<div id="ns-anim">
+  <div class="nsa-title">🔐 Needham–Schroeder — Әкімші аутентификациясы</div>
+  <div class="nsa-sub">Жоғарғы деңгей рұқсат тексерілуде...</div>
+  <div class="nsa-wrap">
+    <div class="nsa" id="nsa0"><span>📤</span>1. A → KDC: {admin, B, Na}Kkdc — L5 рұқсат сұрауы</div>
+    <div class="nsa" id="nsa1"><span>🔑</span>2. KDC → A: {Ks, B, Na, {Ks,A}Kb}Ka — Admin сессия кілті</div>
+    <div class="nsa" id="nsa2"><span>📨</span>3. A → B: {Ks, A}Kb — серверге аутентификация</div>
+    <div class="nsa" id="nsa3"><span>🔄</span>4. B → A: {Nb}Ks — nonce растамасы</div>
+    <div class="nsa" id="nsa4"><span>✅</span>5. A → B: {Nb–1}Ks — L5 рұқсат берілді</div>
+  </div>
+  <div class="nsa-prog-wrap"><div class="nsa-prog" id="nsa-prog"></div></div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="tb-l">
+      <button class="burger" id="burger" onclick="toggleSB()"><span></span><span></span><span></span></button>
+      <a class="tb-logo" href="index.html">
+        <div class="tb-logo-ic">⛽</div>
+        <div><div class="tb-logo-n">QazMunaiGaz Pro</div><div class="tb-logo-s">Әкімші панелі</div></div>
+      </a>
+      <div class="ad-pill">👑 Әкімші · L5</div>
+    </div>
+    <div class="tb-r">
+      <div class="tb-ns"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite;display:inline-block"></span>NS ON</div>
+      <div class="tb-clock" id="tb-clock">--:--:--</div>
+      <div class="tb-user">
+        <div class="tb-av" id="tb-av">A</div>
+        <div><div class="tb-uname" id="tb-uname">admin</div><div class="tb-uip">IP: 192.168.0.10</div></div>
+      </div>
+      <button class="tb-logout" onclick="doLogout()">Шығу ↩</button>
+    </div>
+  </div>
+
+  <div class="body">
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+      <div class="sb-sec">Басқару</div>
+      <button class="sbi active" onclick="goPage('dashboard',this)"><span class="sbi-ic">📊</span>Дашборд</button>
+      <button class="sbi" onclick="goPage('employees',this)"><span class="sbi-ic">👥</span>Қызметкерлер DB</button>
+      <button class="sbi" onclick="goPage('company',this)"><span class="sbi-ic">🏢</span>Компания деректері</button>
+      <button class="sbi" onclick="goPage('security',this)"><span class="sbi-ic">🔐</span>NS Қауіпсіздік</button>
+      <button class="sbi" onclick="goPage('logs',this)"><span class="sbi-ic">📋</span>Журнал</button>
+      <div class="sb-div"></div>
+      <div class="sb-sec">Сілтемелер</div>
+      <button class="sbi" onclick="window.location.href='operator.html'"><span class="sbi-ic">🛡️</span>Оператор панелі ↗</button>
+      <button class="sbi" onclick="window.open('demo.html','_blank')"><span class="sbi-ic">🔐</span>NS Демо ↗</button>
+      <button class="sbi" onclick="window.open('hacker.html','_blank')"><span class="sbi-ic">💀</span>Хакер демо ↗</button>
+      <div class="sb-stat">
+        <div class="sb-stat-t">Жүйе статусы</div>
+        <div class="sb-stat-r"><span>Қызметкерлер</span><span style="color:var(--gold2)">8 / 8</span></div>
+        <div class="sb-stat-r"><span>Нысандар</span><span style="color:var(--green)">180</span></div>
+        <div class="sb-stat-r"><span>NS v2.1</span><span style="color:var(--green)">176/180</span></div>
+        <div class="sb-stat-r"><span>Шабуылдар</span><span style="color:var(--red)">147 бұғ.</span></div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="pg active" id="pg-dashboard">
+        <div class="pg-tag">Дашборд</div>
+        <div class="pg-h1">Әкімші дашборды</div>
+        <div class="pg-sub">Толық жүйе мониторингі — нақты уақыт</div>
+        <div class="g4 mb">
+          <div class="stat"><div class="stat-ic">👥</div><div class="stat-lb">Қызметкерлер</div><div class="stat-val">8</div><div class="stat-unit">белсенді аккаунт</div><div class="stat-tr tok">L1–L5 рұқсат</div></div>
+          <div class="stat"><div class="stat-ic">🏭</div><div class="stat-lb">Нысандар</div><div class="stat-val" style="color:var(--green)">180</div><div class="stat-unit">өндіріс нысаны</div><div class="stat-tr tup">↑ 176 NS v2.1</div></div>
+          <div class="stat"><div class="stat-ic">🔐</div><div class="stat-lb">Бұғатталған</div><div class="stat-val" style="color:var(--green)">147</div><div class="stat-unit">шабуыл (30 күн)</div><div class="stat-tr tup">↑ 0 сәтті шабуыл</div></div>
+          <div class="stat"><div class="stat-ic">💰</div><div class="stat-lb">Кіріс (2025)</div><div class="stat-val" style="color:var(--gold2)">₸2.84</div><div class="stat-unit">трлн тенге</div><div class="stat-tr tup">↑ +18%</div></div>
+        </div>
+        <div class="g2">
+          <div class="card"><div class="card-t">📋 Соңғы оқиғалар</div><div class="log-list" id="dash-log"></div></div>
+          <div class="card">
+            <div class="card-t">🔑 Кіру тарихы</div>
+            <table class="tbl">
+              <thead><tr><th>Пайдаланушы</th><th>Рөл</th><th>IP</th><th>NS</th><th>Уақыт</th></tr></thead>
+              <tbody id="login-hist"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- EMPLOYEES DB -->
+      <div class="pg" id="pg-employees">
+        <div class="pg-tag">Қызметкерлер DB</div>
+        <div class="pg-h1">Қызметкерлер деректер базасы</div>
+        <div class="pg-sub">Барлық қызметкерлер, рұқсат деңгейлері, фотолар. 📷 белгісін басып фото жүктей аласыз.</div>
+        <div class="db-bar">
+          <div class="db-search">
+            <span style="color:var(--t3)">🔍</span>
+            <input placeholder="Іздеу: аты, рөл, бөлім, email..." oninput="filterEmp(this.value)">
+          </div>
+          <button class="db-btn db-gold" onclick="toast('Функционал әзірленуде','warn')">+ Жаңа қызметкер</button>
+          <button class="db-btn db-out" onclick="toast('CSV экспортталды','ok')">↓ CSV</button>
+        </div>
+        <div class="card">
+          <table class="tbl">
+            <thead><tr><th>ID</th><th>Аты-жөні / Фото</th><th>Рөл / Бөлім</th><th>Email</th><th>Рұқсат</th><th>Соңғы кіру</th><th>Статус</th></tr></thead>
+            <tbody id="emp-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- COMPANY DATA -->
+      <div class="pg" id="pg-company">
+        <div class="pg-tag">Компания</div>
+        <div class="pg-h1">Компания деректері</div>
+        <div class="pg-sub">Өндіріс нысандары, жобалар реестрі</div>
+        <div class="g2 mb">
+          <div class="card">
+            <div class="card-t">🏭 Өндіріс нысандары</div>
+            <table class="tbl">
+              <thead><tr><th>Нысан</th><th>Орналасу</th><th>Қуат</th><th>SCADA NS</th><th>Статус</th></tr></thead>
+              <tbody>
+                <tr><td>KZ-Atyrau-01</td><td>Атырау</td><td>4 200 т/тәу</td><td><span class="bdg bgold">NS v2.1</span></td><td><span class="bdg bok">Белсенді</span></td></tr>
+                <tr><td>KZ-Mangystau-03</td><td>Маңғыстау</td><td>3 100 т/тәу</td><td><span class="bdg bgold">NS v2.1</span></td><td><span class="bdg bok">Белсенді</span></td></tr>
+                <tr><td>KZ-Kyzylorda-02</td><td>Қызылорда</td><td>2 800 т/тәу</td><td><span class="bdg bwarn">NS v1.0</span></td><td><span class="bdg bwarn">Жөндеу</span></td></tr>
+                <tr><td>KZ-WKO-07</td><td>БҚО</td><td>5 600 т/тәу</td><td><span class="bdg bgold">NS v2.1</span></td><td><span class="bdg bok">Белсенді</span></td></tr>
+                <tr><td>KZ-Tengiz-NS</td><td>Теңіз</td><td>8 200 т/тәу</td><td><span class="bdg bgold">NS v2.1</span></td><td><span class="bdg bok">Белсенді</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-t">📁 Жоба реестрі</div>
+            <table class="tbl">
+              <thead><tr><th>Жоба</th><th>Бюджет</th><th>Мерзім</th><th>%</th></tr></thead>
+              <tbody>
+                <tr><td>SCADA NS Security</td><td>₸ 2.4 млрд</td><td>2025 Q4</td><td><span class="bdg bok">78%</span></td></tr>
+                <tr><td>Жайсаң ЖЭС</td><td>$340 млн</td><td>2026 Q2</td><td><span class="bdg bwarn">45%</span></td></tr>
+                <tr><td>Digital Twin</td><td>₸ 890 млн</td><td>2025 Q3</td><td><span class="bdg bok">62%</span></td></tr>
+                <tr><td>AI Мониторинг</td><td>₸ 450 млн</td><td>2025 Q4</td><td><span class="bdg binfo">30%</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="g4">
+          <div class="stat"><div class="stat-ic">🏭</div><div class="stat-lb">Барлық нысан</div><div class="stat-val">180</div></div>
+          <div class="stat"><div class="stat-ic">🔐</div><div class="stat-lb">NS v2.1 қорғалған</div><div class="stat-val" style="color:var(--green)">176</div></div>
+          <div class="stat"><div class="stat-ic">⚠️</div><div class="stat-lb">Жаңарту қажет</div><div class="stat-val" style="color:var(--amber)">4</div></div>
+          <div class="stat"><div class="stat-ic">💰</div><div class="stat-lb">Жалпы инвестиция</div><div class="stat-val" style="color:var(--gold2)">₸3.8</div><div class="stat-unit">трлн</div></div>
+        </div>
+      </div>
+
+      <!-- NS SECURITY -->
+      <div class="pg" id="pg-security">
+        <div class="pg-tag">NS Қауіпсіздік</div>
+        <div class="pg-h1">Needham–Schroeder — Қауіпсіздік орталығы</div>
+        <div class="pg-sub">NS протоколының жағдайы, статистикасы және интерактивті симуляция</div>
+        <div class="g3 mb">
+          <div class="stat"><div class="stat-ic">🔐</div><div class="stat-lb">NS Протоколы</div><div class="stat-val" style="color:var(--gold2)">v2.1</div><div class="stat-unit">Лоу түзетуімен</div><div class="stat-tr tup">✓ {Na,Nb,B}Ka</div></div>
+          <div class="stat"><div class="stat-ic">🛡️</div><div class="stat-lb">Бұғатталған шабуыл</div><div class="stat-val" style="color:var(--green)">147</div><div class="stat-unit">соңғы 30 күнде</div><div class="stat-tr tup">↑ 0 сәтті шабуыл</div></div>
+          <div class="stat"><div class="stat-ic">🔑</div><div class="stat-lb">Шифрлау</div><div class="stat-val" style="color:var(--blue3)">RSA</div><div class="stat-unit">2048-bit + AES-256</div><div class="stat-tr tok">IEC 62443</div></div>
+        </div>
+        <div class="g2 mb">
+          <div class="card">
+            <div class="card-t">🔄 NS Протокол — Интерактивті симуляция</div>
+            <div class="ns-vis" id="ns-vis"></div>
+            <div class="ns-btns">
+              <button class="ns-btn ns-ok" onclick="runNS(false)">▶ Норма симуляциясы</button>
+              <button class="ns-btn ns-atk" onclick="runNS(true)">💀 Лоу шабуылы симуляциясы</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-t">📊 Соңғы сессиялар</div>
+            <table class="tbl">
+              <thead><tr><th>Уақыт</th><th>Пайдаланушы</th><th>IP</th><th>NS қадам</th><th>Нәтиже</th></tr></thead>
+              <tbody id="ns-sess"></tbody>
+            </table>
+            <div style="margin-top:16px">
+              <div class="card-t">Хаттама салыстыру</div>
+              <table class="tbl">
+                <thead><tr><th>Қасиет</th><th style="color:var(--red)">NS түпнұсқа</th><th style="color:var(--green)">NS + Лоу</th></tr></thead>
+                <tbody>
+                  <tr><td>Параллель сессия</td><td><span class="bdg berr">✗ ОСАЛ</span></td><td><span class="bdg bok">✓ ҚОРҒАЛҒАН</span></td></tr>
+                  <tr><td>2-хабар</td><td style="font-family:monospace;font-size:10px">{Na,Nb}Ka</td><td style="font-family:monospace;font-size:10px;color:var(--green)">{Na,Nb,<b>B</b>}Ka</td></tr>
+                  <tr><td>ProVerif</td><td><span class="bdg berr">Өтпеген</span></td><td><span class="bdg bok">Өткен</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOGS -->
+      <div class="pg" id="pg-logs">
+        <div class="pg-tag">Журнал</div>
+        <div class="pg-h1">Оқиғалар журналы</div>
+        <div class="pg-sub">Барлық жүйелік оқиғалар мен іс-әрекеттер тіркелімі</div>
+        <div class="card">
+          <div class="card-t"><span>📋 Барлық оқиғалар</span><button class="db-btn db-out" onclick="toast('Журнал экспортталды','ok')" style="font-size:11px;padding:5px 12px">↓ Экспорт</button></div>
+          <div class="log-list" id="full-log"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var LOGS=[], sbOpen=true, empPhotos={};
+
+// CLOCK
+setInterval(function(){
+  var d=new Date(),t=pp(d.getHours())+':'+pp(d.getMinutes())+':'+pp(d.getSeconds());
+  var el=document.getElementById('tb-clock');if(el)el.textContent=t;
+},1000);
+function pp(n){return String(n).padStart(2,'0')}
+function nowStr(){var d=new Date();return pp(d.getHours())+':'+pp(d.getMinutes())+':'+pp(d.getSeconds())}
+
+// LOGIN
+function doLogin(){
+  var u=document.getElementById('l-user').value.trim();
+  var p=document.getElementById('l-pass').value;
+  if(!u||!p){document.getElementById('l-err').classList.add('show');return;}
+  document.getElementById('l-err').classList.remove('show');
+  var ns=document.getElementById('ns-anim');ns.classList.add('show');
+  var prog=document.getElementById('nsa-prog');
+  [0,1,2,3,4].forEach(function(i){
+    setTimeout(function(){
+      if(i>0)document.getElementById('nsa'+(i-1)).className='nsa done';
+      document.getElementById('nsa'+i).className='nsa active';
+      prog.style.width=((i+1)/5*100)+'%';
+      if(i===4){setTimeout(function(){document.getElementById('nsa4').className='nsa done';setTimeout(function(){ns.classList.remove('show');startApp(u);},500);},400);}
+    },i*680);
+  });
+}
+function startApp(u){
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').classList.add('show');
+  document.getElementById('tb-uname').textContent=u;
+  document.getElementById('tb-av').textContent=u[0].toUpperCase();
+  initData(u);
+  addLog('ok','[КІРУ]',u+' әкімші панеліне кірді · NS 5/5 ✓ · L5 рұқсат · IP: 192.168.0.10');
+}
+function doLogout(){
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('login').style.display='flex';
+  [0,1,2,3,4].forEach(function(i){document.getElementById('nsa'+i).className='nsa';});
+  document.getElementById('nsa-prog').style.width='0';
+  LOGS=[];
+}
+
+// SIDEBAR
+function toggleSB(){
+  sbOpen=!sbOpen;
+  document.getElementById('sidebar').classList.toggle('collapsed',!sbOpen);
+  document.getElementById('burger').classList.toggle('open',!sbOpen);
+}
+
+// PAGES
+function goPage(id,btn){
+  document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('active')});
+  document.querySelectorAll('.sbi').forEach(function(b){b.classList.remove('active')});
+  document.getElementById('pg-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(id==='security')initNSVis();
+}
+
+// TOAST
+function toast(msg,type){
+  var el=document.getElementById('toast');
+  el.textContent=msg;el.className='toast t-'+(type||'ok')+' show';
+  setTimeout(function(){el.classList.remove('show');},3200);
+}
+
+// LOGS
+function addLog(type,tag,msg){
+  var cls={ok:'bok',err:'berr',warn:'bwarn',info:'binfo'}[type]||'binfo';
+  LOGS.unshift({t:nowStr(),cls:cls,tag:tag,msg:msg});
+  renderLogs();
+}
+function renderLogs(){
+  ['dash-log','full-log'].forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    el.innerHTML=LOGS.slice(0,id==='dash-log'?6:60).map(function(l){
+      return'<div class="log-item"><span class="log-time">'+l.t+'</span>'+
+        '<span style="flex-shrink:0;margin-right:5px"><span class="bdg '+l.cls+'">'+l.tag+'</span></span>'+
+        '<span class="log-msg">'+l.msg+'</span></div>';
+    }).join('');
+  });
+}
+
+// EMPLOYEES
+var EMPS=[
+  {id:'EMP-001',name:'Сейткали Арман Болатович',role:'Бас директор',dept:'Басшылық',email:'a.seitkali@qmg.kz',level:'L5 — Толық',last:'09:10',s:'ok'},
+  {id:'EMP-002',name:'Нұрланова Гүлнар Қайратқызы',role:'SCADA қауіпсіздік басшысы',dept:'IT Қауіпсіздік',email:'g.nurlanova@qmg.kz',level:'L4 — SCADA',last:'08:55',s:'ok'},
+  {id:'EMP-003',name:'Ержанов Дәурен Мұхтарұлы',role:'Бас инженер',dept:'Өндіріс',email:'d.yerzhanov@qmg.kz',level:'L4 — Өндіріс',last:'08:30',s:'ok'},
+  {id:'EMP-004',name:'Сарсенова Айгерім Берікқызы',role:'Оператор-2',dept:'Мониторинг',email:'a.sarsenova@qmg.kz',level:'L2 — Оператор',last:'09:14',s:'ok'},
+  {id:'EMP-005',name:'Қасымов Тимур Асқарұлы',role:'Геолог, PhD',dept:'Геология',email:'t.kasymov@qmg.kz',level:'L3 — Зерттеу',last:'07:14',s:'warn'},
+  {id:'EMP-006',name:'Бекова Мадина Серікқызы',role:'Қаржы директоры',dept:'Қаржы',email:'m.bekova@qmg.kz',level:'L4 — Қаржы',last:'08:00',s:'ok'},
+  {id:'EMP-007',name:'Иванченко Роман Владимирович',role:'IT Архитектор',dept:'Технология',email:'r.ivanchenko@qmg.kz',level:'L3 — IT',last:'09:05',s:'ok'},
+  {id:'EMP-008',name:'Абдрахманова Салтанат',role:'HR директоры',dept:'HR',email:'s.abdrakhmanova@qmg.kz',level:'L3 — HR',last:'08:40',s:'ok'},
+];
+var filtered=EMPS;
+function filterEmp(q){
+  filtered=q?EMPS.filter(function(e){return(e.name+e.role+e.dept+e.email).toLowerCase().includes(q.toLowerCase());}):EMPS;
+  renderEmps();
+}
+function renderEmps(){
+  document.getElementById('emp-tbody').innerHTML=filtered.map(function(e){
+    var av=empPhotos[e.id]
+      ?'<img src="'+empPhotos[e.id]+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)">'
+      :'<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--navy3),var(--red));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff">'+e.name[0]+'</div>';
+    return'<tr>'+
+      '<td style="font-family:monospace;font-size:10px;color:var(--t3)">'+e.id+'</td>'+
+      '<td><div style="display:flex;align-items:center;gap:9px">'+av+
+        '<div><div style="font-weight:600">'+e.name+'</div>'+
+        '<label style="font-size:10px;color:var(--blue3);cursor:pointer;margin-top:2px;display:flex;align-items:center;gap:3px">'+
+        '📷 фото жүктеу<input type="file" accept="image/*" style="display:none" onchange="uploadPhoto(\''+e.id+'\',this)">'+
+        '</label></div></div></td>'+
+      '<td><div style="color:var(--text)">'+e.role+'</div><div style="font-size:11px;color:var(--t3)">'+e.dept+'</div></td>'+
+      '<td style="font-family:monospace;font-size:11px"><a href="mailto:'+e.email+'" style="color:var(--blue3);text-decoration:none">'+e.email+'</a></td>'+
+      '<td><span class="bdg bgold">'+e.level+'</span></td>'+
+      '<td style="font-family:monospace;font-size:11px">'+e.last+'</td>'+
+      '<td><span class="bdg '+(e.s==='ok'?'bok':'bwarn')+'">'+(e.s==='ok'?'Белсенді':'Ескерту')+'</span></td>'+
+      '</tr>';
+  }).join('');
+}
+function uploadPhoto(id,input){
+  if(!input.files||!input.files[0])return;
+  var r=new FileReader();
+  r.onload=function(ev){
+    empPhotos[id]=ev.target.result;
+    renderEmps();
+    toast('✓ Фото жүктелді — '+id,'ok');
+    addLog('ok','[DB]','Қызметкер фотосы жаңартылды: '+id);
+  };
+  r.readAsDataURL(input.files[0]);
+}
+
+// NS VIS
+var NSS=[
+  {n:'1',label:'A → KDC: {user, B, Na}Kkdc',desc:'Сессия сұрауы'},
+  {n:'2',label:'KDC → A: {Ks, B, Na, {Ks,A}Kb}Ka',desc:'Сессия кілті алынды'},
+  {n:'3',label:'A → B: {Ks, A}Kb',desc:'Серверге аутентификация'},
+  {n:'4',label:'B → A: {Nb}Ks',desc:'Nonce растамасы'},
+  {n:'5',label:'A → B: {Nb–1}Ks',desc:'Аутентификация аяқталды'},
+];
+function initNSVis(){
+  document.getElementById('ns-vis').innerHTML=NSS.map(function(s,i){
+    return'<div class="ns-row" id="nsr'+i+'">'+
+      '<div class="ns-row-n">'+s.n+'</div>'+
+      '<div style="flex:1"><div>'+s.label+'</div><div style="font-size:10px;color:var(--t3);margin-top:2px">'+s.desc+'</div></div>'+
+      '<div id="nsri'+i+'"></div></div>';
+  }).join('');
+  initNSSess();
+}
+function runNS(isAtk){
+  NSS.forEach(function(_,i){document.getElementById('nsr'+i).className='ns-row';document.getElementById('nsri'+i).textContent='';});
+  NSS.forEach(function(_,i){
+    setTimeout(function(){
+      var el=document.getElementById('nsr'+i);
+      var ico=document.getElementById('nsri'+i);
+      var fail=isAtk&&i===2;
+      el.className='ns-row '+(fail?'fail':'active');
+      ico.textContent=fail?'✗':'⟳';
+      if(i>0){
+        var prev=document.getElementById('nsr'+(i-1));
+        var pico=document.getElementById('nsri'+(i-1));
+        prev.className='ns-row '+(isAtk&&i-1===2?'fail':'done');
+        pico.textContent=isAtk&&i-1===2?'✗':'✓';
+      }
+      if(i===NSS.length-1){
+        setTimeout(function(){
+          el.className='ns-row '+(isAtk?'fail':'done');
+          ico.textContent=isAtk?'✗':'✓';
+          if(isAtk){toast('💀 Лоу шабуылы! NS бұғаттады — C зиянкесі тойтарылды','err');addLog('err','[ШАБУЫЛ]','Параллель сессия шабуылы — NS Лоу түзетуімен бұғатталды');}
+          else{toast('✓ NS аутентификация сәтті — 5/5 қадам','ok');addLog('ok','[NS]','NS демонстрациясы аяқталды — 5/5 қадам сәтті');}
+        },400);
+      }
+    },i*650+(isAtk&&i>2?600:0));
+  });
+}
+function initNSSess(){
+  var el=document.getElementById('ns-sess');if(!el)return;
+  var d=new Date();
+  [{u:'admin',ip:'192.168.0.10',st:'5/5 ✓',ok:true,off:0},
+   {u:'operator1',ip:'192.168.0.22',st:'5/5 ✓',ok:true,off:-180000},
+   {u:'UNKNOWN',ip:'10.0.0.99',st:'2/5 ✗',ok:false,off:-420000}
+  ].forEach(function(s){
+    var t=new Date(d.getTime()+s.off);
+    var ts=pp(t.getHours())+':'+pp(t.getMinutes())+':'+pp(t.getSeconds());
+    var row=document.createElement('tr');
+    row.innerHTML='<td style="font-family:monospace;font-size:10px">'+ts+'</td>'+
+      '<td>'+(s.ok?s.u:'<span style="color:var(--red)">'+s.u+'</span>')+'</td>'+
+      '<td style="font-family:monospace;font-size:10px">'+(s.ok?s.ip:'<span style="color:var(--red)">'+s.ip+'</span>')+'</td>'+
+      '<td style="font-family:monospace;font-size:11px">'+s.st+'</td>'+
+      '<td><span class="bdg '+(s.ok?'bok':'berr')+'">'+(s.ok?'Сәтті':'Бұғатталды')+'</span></td>';
+    el.appendChild(row);
+  });
+}
+
+// INIT
+function initData(u){
+  // Login hist
+  [{u:u,r:'Әкімші',ip:'192.168.0.10',ns:'5/5',t:nowStr(),ok:true},
+   {u:'operator1',r:'Оператор',ip:'192.168.0.22',ns:'5/5',t:'09:14',ok:true},
+   {u:'UNKNOWN',r:'—',ip:'10.0.0.99',ns:'2/5',t:'08:30',ok:false},
+  ].forEach(function(l){
+    var row='<tr><td>'+(l.ok?l.u:'<span style="color:var(--red)">'+l.u+'</span>')+'</td>'+
+      '<td><span class="bdg '+(l.ok?'binfo':'berr')+'">'+l.r+'</span></td>'+
+      '<td style="font-family:monospace;font-size:10px">'+(l.ok?l.ip:'<span style="color:var(--red)">'+l.ip+'</span>')+'</td>'+
+      '<td><span class="bdg '+(l.ok?'bok':'berr')+'">'+l.ns+'</span></td>'+
+      '<td style="font-family:monospace;font-size:10px">'+l.t+'</td></tr>';
+    document.getElementById('login-hist').innerHTML+=row;
+  });
+  // Preset logs
+  [{t:'ok',k:'[КІРУ]',m:u+' — NS аутентификация сәтті (5/5) · L5 рұқсат'},
+   {t:'err',k:'[ҚАУІП]',m:'10.0.0.99 — рұқсатсыз кіру әрекеті бұғатталды'},
+   {t:'info',k:'[ЖҮЙЕ]',m:'Жүйе тексерісі: 178/180 RTU онлайн, NS v2.1 белсенді'},
+   {t:'warn',k:'[DB]',m:'EMP-005 соңғы кіру уақыты ескірген — тексеру ұсынылады'},
+   {t:'ok',k:'[NS]',m:'KDC сессия кілтін жаңартты — барлық RTU шифрланған'},
+  ].forEach(function(l){LOGS.push({t:nowStr(),cls:{ok:'bok',err:'berr',warn:'bwarn',info:'binfo'}[l.t],tag:l.k,msg:l.m});});
+  renderLogs();
+  renderEmps();
+  initNSVis();
+  // Auto events
+  setTimeout(function(){addLog('warn','[ЖҮЙЕ]','NS v1.0 нысандары (4) жаңарту кезегінде');toast('⚠ 4 нысан NS v2.1-ге жаңартуды қажет етеді','warn');},8000);
+  setTimeout(function(){addLog('err','[ШАБУЫЛ]','10.0.0.99 параллель сессия шабуылы — NS Лоу түзетуімен бұғатталды');toast('💀 Шабуыл бұғатталды! NS протоколы жұмыс істеді','err');},20000);
+  setTimeout(function(){addLog('ok','[NS]','KDC сессия кілтін жаңартты — жоспарлы жаңарту');},34000);
+}
+</script>
+</body>
+</html>
